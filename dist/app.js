@@ -460,9 +460,24 @@ function takeBet(player, requested) {
   const paid = Math.max(0, Math.min(player.stack, Math.floor(requested)));
   player.stack -= paid;
   player.currentBet += paid;
-  game.pot += paid;
   game.currentBet = Math.max(game.currentBet, player.currentBet);
   return paid;
+}
+
+function collectStreetBets() {
+  if (!game) return 0;
+  const collected = game.players.reduce((total, player) => total + player.currentBet, 0);
+  if (collected <= 0) return 0;
+  game.pot += collected;
+  game.currentBet = 0;
+  game.respondingToRaise = false;
+  game.players.forEach(player => { player.currentBet = 0; });
+  const pokerTable = document.querySelector(".poker-table");
+  pokerTable.classList.remove("collecting-bets");
+  void pokerTable.offsetWidth;
+  pokerTable.classList.add("collecting-bets");
+  window.setTimeout(() => pokerTable.classList.remove("collecting-bets"), 440);
+  return collected;
 }
 
 function amountToCall(player) {
@@ -632,11 +647,15 @@ function renderGame() {
     if (player.eliminated) tags.push('<span class="seat-status">Éliminé</span>');
     const reveal = player.human || game.revealBots;
     const cards = player.cards.map(card => cardHTML(card, !reveal || player.folded)).join("");
+    const wager = player.currentBet > 0
+      ? `<div class="seat-wager" aria-label="${player.currentBet.toLocaleString("fr-FR")} jetons misés"><span class="chip-stack" aria-hidden="true"><i></i><i></i><i></i></span><strong>${player.currentBet.toLocaleString("fr-FR")}</strong></div>`
+      : "";
     return `<div class="game-seat seat-${index} ${player.eliminated ? "eliminated" : ""} ${player.folded ? "folded" : ""} ${player.human && game.awaitingPlayer ? "current-turn" : ""}">
       <div class="seat-cards">${cards}</div>
       <img class="seat-avatar" src="${avatarPath(player.avatar)}" alt="">
       <span class="seat-name">${player.human ? "Vous" : player.name}${tags.join("")}</span>
       <span class="seat-stack">${player.stack.toLocaleString("fr-FR")} jetons</span>
+      ${wager}
     </div>`;
   }).join("");
 
@@ -776,12 +795,6 @@ async function runBots(humanRaised, allowReraise = true) {
   }
 }
 
-function resetStreetBets() {
-  game.currentBet = 0;
-  game.respondingToRaise = false;
-  game.players.forEach(player => { player.currentBet = 0; });
-}
-
 function revealNextStreet() {
   if (game.street === "preflop") {
     game.street = "flop";
@@ -804,12 +817,14 @@ async function advanceStreetOrShowdown() {
     awardUncontestedPot();
     return;
   }
+  collectStreetBets();
+  renderGame();
+  await pause(320);
   if (game.street === "river") {
     showdown();
     return;
   }
   revealNextStreet();
-  resetStreetBets();
   const human = game.players[0];
   if (human.folded || human.stack <= 0) {
     await runOutToShowdown();
@@ -827,10 +842,11 @@ async function runOutToShowdown() {
     awardUncontestedPot();
     return;
   }
+  collectStreetBets();
+  renderGame();
   while (game.community.length < 5) {
     await pause(260);
     revealNextStreet();
-    resetStreetBets();
     renderGame();
   }
   showdown();
@@ -839,6 +855,7 @@ async function runOutToShowdown() {
 function showdown() {
   const contenders = activeInHand();
   if (!contenders.length) return;
+  collectStreetBets();
   game.revealBots = true;
   let best = null;
   let winners = [];
@@ -861,6 +878,7 @@ function showdown() {
 }
 
 function awardUncontestedPot() {
+  collectStreetBets();
   const winner = activeInHand()[0];
   if (winner) {
     winner.stack += game.pot;

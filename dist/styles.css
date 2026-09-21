@@ -200,6 +200,20 @@ p { color: var(--muted); }
 .seat-name { display:block; max-width:145px; margin:1px auto 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; text-shadow:0 2px 4px #000; }
 .seat-stack { color:var(--gold-light); font-size:.76rem; text-shadow:0 2px 4px #000; }
 .seat-status { display:inline-block; margin-left:4px; color:#83e3ae; font-size:.66rem; text-transform:uppercase; }
+.seat-wager { position:absolute; z-index:6; display:flex; align-items:center; gap:5px; padding:3px 7px 3px 4px; border:1px solid rgba(243,213,142,.55); border-radius:999px; background:rgba(5,14,10,.88); box-shadow:0 5px 14px rgba(0,0,0,.46); color:#fff5d8; font-size:.68rem; line-height:1; white-space:nowrap; }
+.chip-stack { position:relative; width:24px; height:18px; flex:0 0 24px; }
+.chip-stack i { position:absolute; left:1px; width:21px; height:8px; border:2px dashed #f6d98f; border-radius:50%; background:#a52f3b; box-shadow:0 1px 2px rgba(0,0,0,.45); }
+.chip-stack i:nth-child(1) { top:8px; }
+.chip-stack i:nth-child(2) { top:4px; background:#174f8a; }
+.chip-stack i:nth-child(3) { top:0; background:#a52f3b; }
+.game-seat.seat-0 .seat-wager { left:50%; top:-28px; transform:translateX(-50%); }
+.game-seat.seat-3 .seat-wager { left:50%; top:calc(100% + 3px); transform:translateX(-50%); }
+.game-seat.seat-1 .seat-wager,
+.game-seat.seat-2 .seat-wager { left:calc(100% - 10px); top:48%; transform:translateY(-50%); }
+.game-seat.seat-4 .seat-wager,
+.game-seat.seat-5 .seat-wager { right:calc(100% - 10px); top:48%; transform:translateY(-50%); }
+.poker-table.collecting-bets .pot-chip { animation:pot-collect .44s ease both; }
+@keyframes pot-collect { 0% { transform:scale(1); box-shadow:0 0 0 rgba(243,213,142,0); } 45% { transform:scale(1.18); box-shadow:0 0 22px rgba(243,213,142,.5); } 100% { transform:scale(1); box-shadow:0 0 0 rgba(243,213,142,0); } }
 .seat-cards { height:38px; display:flex; justify-content:center; gap:3px; margin-top:-11px; }
 .seat-cards .playing-card { width:27px; height:38px; border-radius:4px; padding:2px; font-size:.55rem; }
 .seat-cards .playing-card .card-suit { font-size:.72rem; }
@@ -484,6 +498,18 @@ legend { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
   body.game-mode .seat-name { max-width: 88px; margin-top: 0; font-size: .58rem; line-height: 1.1; }
   body.game-mode .seat-stack { font-size: .55rem; line-height: 1; }
   body.game-mode .seat-status { font-size: .48rem; }
+  body.game-mode .seat-wager { gap: 3px; padding: 2px 5px 2px 3px; font-size: .52rem; }
+  body.game-mode .chip-stack { width: 18px; height: 14px; flex-basis: 18px; }
+  body.game-mode .chip-stack i { width: 16px; height: 6px; border-width: 1px; }
+  body.game-mode .chip-stack i:nth-child(1) { top: 7px; }
+  body.game-mode .chip-stack i:nth-child(2) { top: 4px; }
+  body.game-mode .chip-stack i:nth-child(3) { top: 1px; }
+  body.game-mode .game-seat.seat-0 .seat-wager { top: -18px; }
+  body.game-mode .game-seat.seat-3 .seat-wager { top: calc(100% - 4px); }
+  body.game-mode .game-seat.seat-1 .seat-wager,
+  body.game-mode .game-seat.seat-2 .seat-wager { left: calc(100% - 5px); }
+  body.game-mode .game-seat.seat-4 .seat-wager,
+  body.game-mode .game-seat.seat-5 .seat-wager { right: calc(100% - 5px); }
   body.game-mode .seat-cards { height: 25px; gap: 2px; margin-top: -7px; }
   body.game-mode .seat-cards .playing-card { width: 18px; height: 25px; padding: 1px; font-size: .4rem; }
   body.game-mode .seat-cards .playing-card .card-suit { font-size: .48rem; }
