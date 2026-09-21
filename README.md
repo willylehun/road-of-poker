@@ -31,6 +31,10 @@ Le workflow inclus publie automatiquement le dossier `dist` à chaque envoi sur 
 
 Le bouton **Installer l’application** de l’écran d’accueil ouvre directement la fenêtre d’installation lorsqu’elle est disponible et affiche sinon le guide adapté à l’appareil.
 
+### APK Android
+
+Une version Android native est également générée par GitHub Actions. Elle est disponible dans la section **Releases** du dépôt sous le nom `road-of-poker.apk`.
+
 ## Structure
 
 - `dist/app.js` : interface, progression et tournoi ;

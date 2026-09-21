@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.RoadOfPoker" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#050A08</item>
+        <item name="android:navigationBarColor">#050A08</item>
+        <item name="android:windowBackground">#050A08</item>
+        <item name="android:colorAccent">#D8AD57</item>
+    </style>
+</resources>
