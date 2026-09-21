@@ -23,6 +23,14 @@ Ouvrez ensuite `http://localhost:8080`.
 
 Le workflow inclus publie automatiquement le dossier `dist` à chaque envoi sur la branche `main`. Dans les paramètres du dépôt, choisissez **GitHub Actions** comme source de GitHub Pages.
 
+## Installer l’application
+
+- **Android** : ouvrez le jeu dans Chrome, touchez le menu `⋮`, puis **Installer l’application** ou **Ajouter à l’écran d’accueil**.
+- **iPhone / iPad** : ouvrez le jeu dans Safari, touchez **Partager**, puis **Sur l’écran d’accueil** et **Ajouter**.
+- **Ordinateur** : dans Chrome ou Edge, cliquez sur l’icône d’installation située dans la barre d’adresse.
+
+Le bouton **Installer l’application** de l’écran d’accueil ouvre directement la fenêtre d’installation lorsqu’elle est disponible et affiche sinon le guide adapté à l’appareil.
+
 ## Structure
 
 - `dist/app.js` : interface, progression et tournoi ;

@@ -89,6 +89,7 @@ p { color: var(--muted); }
 .quick-stats > div { display: grid; gap: 4px; }
 .quick-stats span { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
 .quick-stats strong { font: 700 1.35rem/1.2 "Playfair Display", serif; }
+.welcome-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; position: relative; z-index: 2; }
 .primary-btn, .secondary-btn, .wheel-button { border: 0; cursor: pointer; font-weight: 700; transition: .2s ease; }
 .primary-btn { background: linear-gradient(135deg, var(--gold-light), var(--gold)); color: #0a1711; padding: 14px 20px; border-radius: 12px; box-shadow: 0 10px 28px rgba(216,173,87,.19); position: relative; z-index: 2; }
 .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(216,173,87,.28); }
@@ -308,12 +309,21 @@ footer { display: flex; justify-content: space-between; align-items: center; gap
 footer strong { color: var(--gold-light); font: 700 1rem "Playfair Display", serif; letter-spacing: .12em; }
 .install-app { border:1px solid rgba(216,173,87,.28); background:rgba(216,173,87,.06); color:var(--gold-light); border-radius:999px; padding:8px 13px; cursor:pointer; font-size:.72rem; font-weight:700; }
 .install-app.ready { background:var(--gold-light); color:#07130f; box-shadow:0 6px 22px rgba(216,173,87,.18); }
+.install-app:disabled { cursor: default; opacity: .68; }
+.install-app-primary { min-height: 46px; padding: 12px 18px; border-radius: 12px; font-size: .88rem; }
 .mobile-nav { display: none; }
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(1,7,4,.87); backdrop-filter: blur(14px); padding: 24px; display: grid; place-items: center; overflow-y: auto; }
 .modal-backdrop.hidden { display: none; }
 .profile-modal-card { width: min(720px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; background: linear-gradient(145deg,#132c22,#07140f); border: 1px solid rgba(216,173,87,.34); border-radius: 28px; padding: clamp(26px,5vw,48px); box-shadow: 0 40px 100px #000; position: relative; }
 .profile-modal-card h1 { font-size: clamp(2.1rem,6vw,3.4rem); }
+.install-modal-card { width: min(540px, 100%); }
+.install-modal-card h2 { margin-top: 14px; font-size: clamp(1.9rem, 6vw, 2.8rem); }
+.install-mark { width: 64px; height: 64px; display: grid; place-items: center; border: 2px solid var(--gold); border-radius: 18px; background: radial-gradient(circle at 35% 25%, #1b4938, #08150f 70%); color: var(--gold-light); font: 800 1.8rem "Playfair Display", serif; box-shadow: 0 14px 35px rgba(0,0,0,.35); margin-bottom: 24px; }
+.install-steps { display: grid; gap: 12px; margin: 24px 0; padding: 0; list-style: none; counter-reset: install-step; }
+.install-steps li { counter-increment: install-step; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: center; color: var(--ink); line-height: 1.45; }
+.install-steps li::before { content: counter(install-step); width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgba(216,173,87,.14); border: 1px solid rgba(216,173,87,.35); color: var(--gold-light); font-weight: 800; }
+.install-note { min-height: 1.5em; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.045); font-size: .88rem; }
 .modal-brand { position: absolute; right: 35px; top: 30px; opacity: .14; }
 .modal-close { position: absolute; right: 17px; top: 14px; width: 36px; height: 36px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); border-radius: 50%; cursor: pointer; font-size: 1.4rem; z-index: 3; }
 .name-field { display: grid; gap: 7px; margin: 25px 0 20px; color: var(--muted); font-size: .82rem; }
@@ -351,6 +361,8 @@ legend { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
   .brand-sub, .desktop-nav { display: none; }
   main { padding: 26px 16px 50px; }
   .welcome-card { min-height: auto; padding: 28px 22px; }
+  .welcome-actions { display: grid; grid-template-columns: 1fr; }
+  .welcome-actions > button { width: 100%; }
   .quick-stats { gap: 20px; justify-content: space-between; margin: 30px 0; }
   .quick-stats strong { font-size: 1.08rem; }
   .wheel-card { grid-template-columns: 1fr; text-align: center; padding: 28px 20px; }

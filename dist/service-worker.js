@@ -1,4 +1,4 @@
-const CACHE_NAME = "road-of-poker-v4";
+const CACHE_NAME = "road-of-poker-v5";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -9,7 +9,8 @@ const CORE_ASSETS = [
   "./offline.html",
   "./icons/icon.svg",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./icons/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", event => {

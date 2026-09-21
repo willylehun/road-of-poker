@@ -9,6 +9,20 @@ const money = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 0
 });
 
+let deferredInstallPrompt = null;
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  updateInstallButtons();
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  updateInstallButtons(true);
+  if (document.getElementById("toast-region")) showToast("Road of Poker est installé.");
+});
+
 // Progression du circuit : des tables d'initiation vers les villes les plus
 // prestigieuses du poker international, avec Las Vegas comme destination finale.
 const TABLES = [
@@ -106,6 +120,85 @@ function showToast(message) {
   toast.textContent = message;
   document.getElementById("toast-region").append(toast);
   window.setTimeout(() => toast.remove(), 3500);
+}
+
+function isInstalledApp() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function installPlatform() {
+  const agent = navigator.userAgent.toLowerCase();
+  const ios = /iphone|ipad|ipod/.test(agent);
+  const android = /android/.test(agent);
+  const inApp = /fban|fbav|instagram|tiktok|line\//.test(agent);
+  return { ios, android, inApp };
+}
+
+function updateInstallButtons(forceInstalled = false) {
+  const installed = forceInstalled || isInstalledApp();
+  document.querySelectorAll("[data-install-app]").forEach(button => {
+    button.disabled = installed;
+    button.classList.toggle("ready", Boolean(deferredInstallPrompt) && !installed);
+    button.textContent = installed ? "Appli installée" : deferredInstallPrompt ? "Installer maintenant" : "Installer l’application";
+  });
+}
+
+function openInstallGuide() {
+  const { ios, android, inApp } = installPlatform();
+  const intro = document.getElementById("install-intro");
+  const steps = document.getElementById("install-steps");
+  const note = document.getElementById("install-note");
+  let instructions;
+
+  if (ios) {
+    instructions = [
+      "Ouvrez cette page dans Safari.",
+      "Touchez le bouton Partager en bas de l’écran.",
+      "Choisissez « Sur l’écran d’accueil », puis « Ajouter »."
+    ];
+    intro.textContent = "Sur iPhone et iPad, l’installation se fait depuis le menu Partager.";
+    note.textContent = inApp ? "Vous êtes dans un navigateur intégré : ouvrez d’abord la page dans Safari." : "L’icône Road of Poker apparaîtra ensuite parmi vos applications.";
+  } else if (android) {
+    instructions = [
+      "Ouvrez cette page dans Chrome.",
+      "Touchez le menu ⋮ en haut à droite.",
+      "Choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil »."
+    ];
+    intro.textContent = "Sur Android, Road of Poker peut s’installer depuis Chrome.";
+    note.textContent = inApp ? "Vous êtes dans un navigateur intégré : ouvrez d’abord la page dans Chrome." : "Après confirmation, le jeu s’ouvrira en plein écran depuis votre accueil.";
+  } else {
+    instructions = [
+      "Ouvrez la page dans Chrome ou Microsoft Edge.",
+      "Cliquez sur l’icône d’installation dans la barre d’adresse.",
+      "Confirmez avec « Installer »."
+    ];
+    intro.textContent = "Road of Poker s’installe aussi comme application sur ordinateur.";
+    note.textContent = "Si l’icône n’apparaît pas, ouvrez le menu du navigateur puis choisissez « Installer Road of Poker ».";
+  }
+
+  steps.innerHTML = instructions.map(instruction => `<li>${instruction}</li>`).join("");
+  document.getElementById("install-modal").classList.remove("hidden");
+  document.getElementById("install-close").focus();
+}
+
+function closeInstallGuide() {
+  document.getElementById("install-modal").classList.add("hidden");
+}
+
+async function requestAppInstall() {
+  if (isInstalledApp()) {
+    showToast("Road of Poker est déjà installé sur cet appareil.");
+    return;
+  }
+  if (!deferredInstallPrompt) {
+    openInstallGuide();
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  updateInstallButtons(choice.outcome === "accepted");
+  if (choice.outcome !== "accepted") openInstallGuide();
 }
 
 function buildAvatars() {
@@ -913,25 +1006,16 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("raise-amount").addEventListener("input", event => {
     document.getElementById("raise-output").value = Number(event.target.value).toLocaleString("fr-FR");
   });
-  let installPrompt = null;
-  const installButton = document.getElementById("install-app");
-  window.addEventListener("beforeinstallprompt", event => {
-    event.preventDefault();
-    installPrompt = event;
-    installButton.classList.add("ready");
+  document.querySelectorAll("[data-install-app]").forEach(button => button.addEventListener("click", requestAppInstall));
+  document.getElementById("install-close").addEventListener("click", closeInstallGuide);
+  document.getElementById("install-done").addEventListener("click", closeInstallGuide);
+  document.getElementById("install-modal").addEventListener("click", event => {
+    if (event.target.id === "install-modal") closeInstallGuide();
   });
-  installButton.addEventListener("click", async () => {
-    if (installPrompt) {
-      installPrompt.prompt();
-      await installPrompt.userChoice;
-      installPrompt = null;
-      installButton.classList.remove("ready");
-      return;
-    }
-    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    showToast(isIos ? "Dans Safari : Partager, puis Sur l’écran d’accueil." : "Ouvrez le menu du navigateur puis choisissez Installer l’application.");
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeInstallGuide();
   });
-  window.addEventListener("appinstalled", () => showToast("Road of Poker est installé."));
+  updateInstallButtons();
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("service-worker.js").catch(() => {});
   }

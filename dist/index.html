@@ -55,7 +55,10 @@
               <div><span>Classement</span><strong id="lobby-rank">#100</strong></div>
               <div><span>Victoires</span><strong id="lobby-wins">0</strong></div>
             </div>
-            <button class="primary-btn" type="button" data-view-target="tables">Choisir une table <span>→</span></button>
+            <div class="welcome-actions">
+              <button class="primary-btn" type="button" data-view-target="tables">Choisir une table <span>→</span></button>
+              <button class="secondary-btn install-app install-app-primary" type="button" data-install-app>Installer l’appli</button>
+            </div>
           </article>
 
           <article class="wheel-card panel">
@@ -201,7 +204,7 @@
       <button type="button" data-view-target="stats"><span>◇</span>Stats</button>
     </nav>
 
-    <footer><span>Jouez avec maîtrise.</span><button class="install-app" id="install-app" type="button">Installer l’application</button><strong>By W</strong><span>Jeu réservé aux adultes · Jeu responsable</span></footer>
+    <footer><span>Jouez avec maîtrise.</span><button class="install-app" type="button" data-install-app>Installer l’application</button><strong>By W</strong><span>Jeu réservé aux adultes · Jeu responsable</span></footer>
   </div>
 
   <div class="modal-backdrop" id="profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-title">
@@ -215,6 +218,19 @@
       <fieldset><legend>Votre avatar</legend><div class="avatar-grid" id="avatar-grid"></div></fieldset>
       <button class="primary-btn full" id="save-profile" type="button">Entrer dans le club</button>
       <p class="form-error" id="profile-error" role="alert"></p>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="install-modal" role="dialog" aria-modal="true" aria-labelledby="install-title">
+    <div class="profile-modal-card install-modal-card">
+      <button class="modal-close" id="install-close" type="button" aria-label="Fermer">×</button>
+      <span class="install-mark" aria-hidden="true">W</span>
+      <span class="eyebrow">Application mobile</span>
+      <h2 id="install-title">Installer Road of Poker</h2>
+      <p id="install-intro">Ajoutez le jeu à votre écran d’accueil pour l’ouvrir comme une vraie application.</p>
+      <ol class="install-steps" id="install-steps"></ol>
+      <p class="install-note" id="install-note"></p>
+      <button class="primary-btn full" id="install-done" type="button">J’ai compris</button>
     </div>
   </div>
 
