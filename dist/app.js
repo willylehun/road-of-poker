@@ -310,7 +310,7 @@ function tableCard(table, index) {
   return `<article class="table-card ${unlocked ? "playable" : "locked"} ${isNext ? "next-destination" : ""}" data-code="${table.code}" data-table-index="${index}" tabindex="${unlocked && affordable ? "0" : "-1"}" style="--table-color:${table.color};--table-accent:${table.accent};--table-image:url('assets/tables/${table.slug}.webp')">
     <div class="city-row"><div><span class="eyebrow">Niveau ${table.prestige} · ${table.tier}</span><h3>${table.city}</h3><p>Tournoi Texas Hold’em · 6 joueurs</p></div><span class="city-marker">${table.code.slice(0, 2)}</span></div>
     <div class="table-meta"><span>Entrée<strong>${money.format(table.buyIn)}</strong></span><span>Blindes<strong>${table.small} / ${table.big}</strong></span></div>
-    <div class="table-action"><span class="players-online">${unlocked ? `● ${table.players} joueurs` : "Top 3 requis"}</span><button class="join-btn ${unlocked && affordable ? "" : "locked"}" type="button" data-play-table="${index}" ${!unlocked || !affordable ? "disabled" : ""}>${buttonLabel}</button></div>
+    <div class="table-action">${unlocked ? "" : '<span class="unlock-requirement">Top 3 requis</span>'}<button class="join-btn ${unlocked && affordable ? "" : "locked"}" type="button" data-play-table="${index}" ${!unlocked || !affordable ? "disabled" : ""}>${buttonLabel}</button></div>
   </article>`;
 }
 
@@ -430,6 +430,23 @@ function switchView(viewName) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function setGameOrientation(landscape) {
+  document.body.classList.toggle("game-mode", landscape);
+  try {
+    if (window.AndroidApp && typeof window.AndroidApp.setLandscape === "function") {
+      window.AndroidApp.setLandscape(landscape);
+    }
+    if (!screen.orientation) return;
+    if (landscape && typeof screen.orientation.lock === "function") {
+      void screen.orientation.lock("landscape").catch(() => {});
+    } else if (!landscape && typeof screen.orientation.unlock === "function") {
+      screen.orientation.unlock();
+    }
+  } catch (_error) {
+    // L’interface reste utilisable si le navigateur refuse le verrouillage.
+  }
+}
+
 function nextActiveIndex(startIndex) {
   if (!game) return -1;
   for (let step = 1; step <= game.players.length; step += 1) {
@@ -472,6 +489,7 @@ function currentBlinds() {
 function startTournament(tableIndex) {
   if (game && !game.finished) {
     switchView("game");
+    setGameOrientation(true);
     showToast("Un tournoi est déjà en cours.");
     return;
   }
@@ -524,6 +542,7 @@ function startTournament(tableIndex) {
   pokerTable.style.setProperty("--table-accent", table.accent);
   pokerTable.style.setProperty("--table-image", `url('assets/tables/${table.slug}.webp')`);
   switchView("game");
+  setGameOrientation(true);
   newHand();
 }
 
@@ -916,20 +935,21 @@ function finishTournament(place) {
     overlay.remove();
     game = null;
     renderAll();
+    setGameOrientation(false);
     switchView("tables");
   });
 }
 
 function leaveTable() {
   if (!game) {
+    setGameOrientation(false);
     switchView("tables");
     return;
   }
-  const confirmed = window.confirm("Quitter le tournoi ? Le prix d’entrée sera perdu.");
-  if (!confirmed) return;
   game.finished = true;
   game = null;
   renderAll();
+  setGameOrientation(false);
   switchView("tables");
   showToast("Vous avez quitté le tournoi.");
 }

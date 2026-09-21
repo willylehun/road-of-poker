@@ -3,11 +3,13 @@ package com.byw.roadofpoker;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.WebResourceRequest;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -37,6 +39,7 @@ public class MainActivity extends Activity {
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
+        webView.addJavascriptInterface(new AndroidBridge(), "AndroidApp");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -50,6 +53,17 @@ public class MainActivity extends Activity {
         });
 
         if (savedInstanceState == null) webView.loadUrl(GAME_URL);
+    }
+
+    private class AndroidBridge {
+        @JavascriptInterface
+        public void setLandscape(boolean landscape) {
+            runOnUiThread(() -> setRequestedOrientation(
+                landscape
+                    ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ));
+        }
     }
 
     @Override
