@@ -1,4 +1,5 @@
 const AVATAR_COUNT = 20;
+const RANKING_AVATAR_COUNT = 100;
 const STORAGE_KEY = "pokerByWProfile";
 const PROFILE_VERSION = 2;
 const PRIZES = [100, 250, 150, 400, 200, 125, 300, 175];
@@ -291,10 +292,14 @@ function updateWheelState() {
 }
 
 function makeRanking() {
+  const opponentAvatars = [
+    ...Array.from({ length: AVATAR_COUNT }, (_, index) => index).filter(index => index !== profile.avatar),
+    ...Array.from({ length: RANKING_AVATAR_COUNT - AVATAR_COUNT }, (_, index) => AVATAR_COUNT + index)
+  ];
   const players = RANKING_NAMES.map((name, i) => ({
     rank: i + 1,
     name,
-    avatar: (i * 7 + 3) % AVATAR_COUNT,
+    avatar: opponentAvatars[i],
     wins: Math.max(0, 18 - Math.floor(i / 6)),
     gains: Math.max(900, 418000 - i * 4050)
   }));
