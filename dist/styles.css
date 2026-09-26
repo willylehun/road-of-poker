@@ -26,9 +26,29 @@ body {
   font: 16px/1.5 "DM Sans", system-ui, sans-serif;
   overflow-x: hidden;
 }
+body.is-loading { overflow: hidden; }
 button, input { font: inherit; }
 button { color: inherit; }
 button:focus-visible, input:focus-visible { outline: 3px solid rgba(243, 213, 142, .75); outline-offset: 3px; }
+
+.loading-screen { position:fixed; z-index:300; inset:0; display:grid; place-items:center; min-height:100dvh; padding:24px; background:radial-gradient(circle at 50% 40%,rgba(20,83,58,.72),transparent 34%),radial-gradient(circle at 50% 120%,rgba(165,58,66,.28),transparent 46%),#030806; opacity:1; visibility:visible; transition:opacity .4s ease,visibility .4s ease; }
+.loading-screen::before { content:""; position:absolute; inset:clamp(20px,5vw,70px); border:1px solid rgba(216,173,87,.16); border-radius:40px; box-shadow:inset 0 0 80px rgba(216,173,87,.04); }
+.loading-halo { position:absolute; width:min(72vw,480px); aspect-ratio:1; border-radius:50%; border:1px solid rgba(216,173,87,.12); box-shadow:0 0 0 35px rgba(216,173,87,.025),0 0 0 80px rgba(216,173,87,.015); animation:loading-breathe 2.2s ease-in-out infinite; }
+.loading-content { position:relative; z-index:2; display:grid; justify-items:center; gap:22px; text-align:center; }
+.loading-brand .brand-word { font-size:clamp(3rem,11vw,6rem); text-shadow:0 10px 36px rgba(0,0,0,.55); }
+.loading-brand > small { font-size:clamp(.58rem,2vw,.88rem); color:var(--gold-light); }
+.loading-suits { display:flex; gap:18px; color:rgba(246,242,233,.42); font:700 1.15rem/1 serif; }
+.loading-suits span:nth-child(2),.loading-suits span:nth-child(3) { color:rgba(214,77,88,.72); }
+.loading-chips { position:relative; width:54px; height:26px; }
+.loading-chips i { position:absolute; left:8px; width:38px; height:12px; border:2px dashed #f3d58e; border-radius:50%; background:#942e38; box-shadow:0 3px 8px rgba(0,0,0,.45); animation:loading-chip 1.25s ease-in-out infinite; }
+.loading-chips i:nth-child(1) { top:14px; animation-delay:-.2s; }
+.loading-chips i:nth-child(2) { top:7px; background:#185b91; animation-delay:-.1s; }
+.loading-chips i:nth-child(3) { top:0; }
+.loading-content p { margin:0; color:var(--muted); font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; }
+body.app-ready .loading-screen { opacity:0; visibility:hidden; pointer-events:none; }
+body.is-loading .app-shell,body.is-loading > .modal-backdrop { visibility:hidden; }
+@keyframes loading-breathe { 0%,100% { transform:scale(.96); opacity:.6; } 50% { transform:scale(1.04); opacity:1; } }
+@keyframes loading-chip { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-3px); } }
 
 .ambient { position: fixed; pointer-events: none; filter: blur(1px); opacity: .45; z-index: -1; }
 .ambient-one { width: 28rem; height: 28rem; top: 8rem; left: -18rem; background: #0c744b; border-radius: 50%; filter: blur(120px); }
@@ -53,8 +73,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(243, 213, 14
 .brand-lockup { display: grid; justify-items: center; line-height: 1; }
 .brand-lockup > small { color: var(--gold-light); font-size: .46rem; font-weight: 800; letter-spacing: .45em; margin: 0 0 3px .45em; }
 .brand-word { font: 800 2rem/1 "Playfair Display", serif; letter-spacing: .09em; white-space: nowrap; }
-.brand-o { width: 1.12em; height: 1.12em; margin: 0 .03em; display: inline-grid; place-items: center; border: .09em solid var(--gold); border-radius: 50%; vertical-align: -.09em; color: var(--gold-light); box-shadow: 0 0 0 .06em rgba(216,173,87,.15); overflow: hidden; }
-.brand-o > span { width: 100%; height: 100%; display: grid; place-items: center; font: 900 .92em/.8 "DM Sans", sans-serif; letter-spacing: -.18em; text-indent: -.18em; transform: scaleX(1.08) translateY(-.01em); }
+.brand-o { width: 1.12em; height: 1.12em; margin: 0 .03em; display: inline-grid; place-items: center; border: .09em solid var(--gold); border-radius: 50%; vertical-align: -.09em; color: var(--gold-light); box-shadow: inset 0 0 .18em rgba(216,173,87,.18), 0 0 0 .055em rgba(216,173,87,.12); overflow: hidden; }
+.brand-o > span { width: 100%; height: 100%; display: grid; place-items: center; font: 900 1em/.72 "DM Sans", sans-serif; letter-spacing: -.2em; text-indent: -.2em; transform: scaleX(1.22) translateY(-.01em); }
 .brand-sub { color: var(--muted); font-size: .67rem; letter-spacing: .12em; text-transform: uppercase; max-width: 70px; line-height: 1.3; }
 .desktop-nav { justify-self: center; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,.035); padding: 5px; border: 1px solid rgba(255,255,255,.05); border-radius: 999px; }
 .nav-link { border: 0; background: transparent; color: var(--muted); padding: 10px 15px; border-radius: 999px; font-size: .88rem; font-weight: 600; cursor: pointer; transition: .2s ease; }
@@ -200,14 +220,14 @@ p { color: var(--muted); }
 .seat-name { display:block; max-width:145px; margin:1px auto 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; text-shadow:0 2px 4px #000; }
 .seat-stack { color:var(--gold-light); font-size:.76rem; text-shadow:0 2px 4px #000; }
 .seat-status { display:inline-block; margin-left:4px; color:#83e3ae; font-size:.66rem; text-transform:uppercase; }
-.seat-wager { position:absolute; z-index:6; display:flex; align-items:center; gap:5px; padding:3px 7px 3px 4px; border:1px solid rgba(243,213,142,.55); border-radius:999px; background:rgba(5,14,10,.88); box-shadow:0 5px 14px rgba(0,0,0,.46); color:#fff5d8; font-size:.68rem; line-height:1; white-space:nowrap; }
+.seat-wager { position:absolute; z-index:6; display:flex; align-items:center; gap:5px; padding:3px 7px 3px 4px; border:1px solid rgba(243,213,142,.55); border-radius:999px; background:rgba(5,14,10,.88); box-shadow:0 5px 14px rgba(0,0,0,.46); color:#fff5d8; font-size:.68rem; line-height:1; white-space:nowrap; pointer-events:none; }
 .chip-stack { position:relative; width:24px; height:18px; flex:0 0 24px; }
 .chip-stack i { position:absolute; left:1px; width:21px; height:8px; border:2px dashed #f6d98f; border-radius:50%; background:#a52f3b; box-shadow:0 1px 2px rgba(0,0,0,.45); }
 .chip-stack i:nth-child(1) { top:8px; }
 .chip-stack i:nth-child(2) { top:4px; background:#174f8a; }
 .chip-stack i:nth-child(3) { top:0; background:#a52f3b; }
-.game-seat.seat-0 .seat-wager { left:50%; top:-28px; transform:translateX(-50%); }
-.game-seat.seat-3 .seat-wager { left:50%; top:calc(100% + 3px); transform:translateX(-50%); }
+.game-seat.seat-0 .seat-wager { left:50%; top:-39px; transform:translateX(-50%); }
+.game-seat.seat-3 .seat-wager { left:50%; top:calc(100% + 8px); transform:translateX(-50%); }
 .game-seat.seat-1 .seat-wager,
 .game-seat.seat-2 .seat-wager { left:calc(100% - 10px); top:48%; transform:translateY(-50%); }
 .game-seat.seat-4 .seat-wager,
@@ -272,6 +292,7 @@ p { color: var(--muted); }
 .rank-player { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .rank-player img { width: 39px; height: 39px; border-radius: 10px; object-fit: cover; }
 .rank-player span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.rank-player small { display:block; margin-top:2px; color:var(--muted); font-size:.66rem; font-weight:500; }
 .rank-row > span:last-child { color: var(--gold-light); font-weight: 700; }
 
 .cup-hero { display: grid; grid-template-columns: auto 1fr auto; gap: 30px; align-items: center; padding: 30px 0 40px; }
@@ -298,6 +319,14 @@ p { color: var(--muted); }
 .qualifier-seat.seat-5 { bottom: 55px; left: 17%; }
 .qualifier-seat.seat-6 { top: 120px; left: 8%; }
 .qualification-note { margin-top: 20px; padding: 16px 20px; border-radius: 12px; border-left: 3px solid var(--gold); background: rgba(216,173,87,.07); color: var(--muted); }
+.world-cup-rules { margin-top:20px; padding:26px; display:grid; grid-template-columns:minmax(0,1fr) minmax(250px,.45fr); gap:28px; align-items:center; }
+.world-cup-rules h2 { margin:7px 0 8px; }
+.world-cup-rules p { margin:0; }
+.world-cup-rules ol { margin:17px 0 0; padding-left:20px; color:var(--muted); display:grid; gap:7px; }
+.world-cup-action { display:grid; gap:9px; padding:18px; border:1px solid var(--line); border-radius:15px; background:rgba(0,0,0,.16); }
+.world-cup-action label { color:var(--muted); font-size:.78rem; }
+.world-cup-action select { width:100%; padding:11px; border:1px solid rgba(255,255,255,.13); border-radius:10px; color:var(--ink); background:#0b2118; }
+.world-cup-action small { color:var(--muted); line-height:1.35; }
 
 .stats-profile { padding: 23px 28px; border-radius: 22px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 18px; margin-bottom: 20px; box-shadow: none; }
 .stats-profile img { width: 80px; height: 80px; border-radius: 18px; object-fit: cover; border: 2px solid var(--gold); }
@@ -338,6 +367,9 @@ footer strong { color: var(--gold-light); font: 700 1rem "Playfair Display", ser
 .install-steps li { counter-increment: install-step; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: center; color: var(--ink); line-height: 1.45; }
 .install-steps li::before { content: counter(install-step); width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgba(216,173,87,.14); border: 1px solid rgba(216,173,87,.35); color: var(--gold-light); font-weight: 800; }
 .install-note { min-height: 1.5em; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.045); font-size: .88rem; }
+.featured-player-card { width:min(480px,100%); text-align:center; }
+.featured-player-card > img { width:112px; height:112px; margin:16px auto; display:block; object-fit:cover; border-radius:50%; border:3px solid var(--gold); box-shadow:0 15px 45px rgba(0,0,0,.5); }
+.featured-player-card h2 { margin-bottom:10px; }
 .modal-brand { position: absolute; right: 35px; top: 30px; opacity: .14; }
 .modal-close { position: absolute; right: 17px; top: 14px; width: 36px; height: 36px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); border-radius: 50%; cursor: pointer; font-size: 1.4rem; z-index: 3; }
 .name-field { display: grid; gap: 7px; margin: 25px 0 20px; color: var(--muted); font-size: .82rem; }
@@ -396,6 +428,7 @@ legend { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
   .cup-emblem { width: 75px; height: 75px; }
   .cup-emblem span { font-size: 2.1rem; }
   .prize-block { grid-column: 1 / -1; text-align: left; }
+  .world-cup-rules { grid-template-columns:1fr; padding:20px; }
   .final-table { min-height: 500px; }
   .qualifier-seat { width: 100px; }
   .qualifier-seat img { width: 58px; height: 58px; }
@@ -504,8 +537,8 @@ legend { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
   body.game-mode .chip-stack i:nth-child(1) { top: 7px; }
   body.game-mode .chip-stack i:nth-child(2) { top: 4px; }
   body.game-mode .chip-stack i:nth-child(3) { top: 1px; }
-  body.game-mode .game-seat.seat-0 .seat-wager { top: -18px; }
-  body.game-mode .game-seat.seat-3 .seat-wager { top: calc(100% - 4px); }
+  body.game-mode .game-seat.seat-0 .seat-wager { top: -30px; }
+  body.game-mode .game-seat.seat-3 .seat-wager { top: calc(100% + 1px); }
   body.game-mode .game-seat.seat-1 .seat-wager,
   body.game-mode .game-seat.seat-2 .seat-wager { left: calc(100% - 5px); }
   body.game-mode .game-seat.seat-4 .seat-wager,

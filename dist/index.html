@@ -18,7 +18,16 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Playfair+Display:wght@700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="is-loading">
+  <div class="loading-screen" id="loading-screen" role="status" aria-live="polite">
+    <div class="loading-halo" aria-hidden="true"></div>
+    <div class="loading-content">
+      <span class="brand-lockup loading-brand"><small>ROAD OF</small><span class="brand-word">P<span class="brand-o"><span>W</span></span>KER</span></span>
+      <div class="loading-suits" aria-hidden="true"><span>♠</span><span>♥</span><span>♦</span><span>♣</span></div>
+      <div class="loading-chips" aria-hidden="true"><i></i><i></i><i></i></div>
+      <p>Préparation de la table…</p>
+    </div>
+  </div>
   <div class="ambient ambient-one"></div>
   <div class="ambient ambient-two"></div>
 
@@ -57,7 +66,7 @@
             </div>
             <div class="welcome-actions">
               <button class="primary-btn" type="button" data-view-target="tables">Choisir une table <span>→</span></button>
-              <button class="secondary-btn install-app install-app-primary" type="button" data-install-app>Installer l’appli</button>
+              <button class="secondary-btn hidden" id="resume-game" type="button">Reprendre la partie</button>
             </div>
           </article>
 
@@ -175,6 +184,24 @@
           <div id="qualifiers"></div>
         </div>
         <div class="qualification-note" id="qualification-note"></div>
+        <div class="world-cup-rules panel">
+          <div>
+            <span class="eyebrow">Règles de qualification</span>
+            <h2>La finale récompense les 6 places</h2>
+            <p>Le classement dépend uniquement des gains remportés en tournoi. Le top 6 accède à la Coupe du monde.</p>
+            <ol>
+              <li>Entrée : 10 000 $ · blindes 500 / 1 000.</li>
+              <li>Chaque place reçoit un prix, du champion au 6e.</li>
+              <li>Avant la finale, défiez un qualifié : finissez devant lui pour gagner un bonus de 20 000 $.</li>
+            </ol>
+          </div>
+          <div class="world-cup-action">
+            <label for="worldcup-challenge">Joueur à défier</label>
+            <select id="worldcup-challenge"></select>
+            <button class="primary-btn" id="start-worldcup" type="button" disabled>Jouer la finale</button>
+            <small id="worldcup-action-note">Atteignez le top 6 pour participer.</small>
+          </div>
+        </div>
       </section>
 
       <section class="view" id="view-stats" aria-labelledby="stats-title">
@@ -207,7 +234,7 @@
     <footer><strong>By W</strong></footer>
   </div>
 
-  <div class="modal-backdrop" id="profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+  <div class="modal-backdrop hidden" id="profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-title">
     <div class="profile-modal-card">
       <div class="modal-brand"><span class="brand-lockup"><small>ROAD OF</small><span class="brand-word">P<span class="brand-o"><span>W</span></span>KER</span></span></div>
       <button class="modal-close" id="profile-close" type="button" aria-label="Fermer">×</button>
@@ -231,6 +258,16 @@
       <ol class="install-steps" id="install-steps"></ol>
       <p class="install-note" id="install-note"></p>
       <button class="primary-btn full" id="install-done" type="button">J’ai compris</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="featured-player-modal" role="dialog" aria-modal="true" aria-labelledby="featured-player-title">
+    <div class="profile-modal-card featured-player-card">
+      <span class="eyebrow">Invité de prestige</span>
+      <img id="featured-player-avatar" src="assets/avatars/avatar-20.webp" alt="">
+      <h2 id="featured-player-title">Un joueur du top mondial est à votre table</h2>
+      <p id="featured-player-copy"></p>
+      <button class="primary-btn full" id="featured-player-start" type="button">Relever le défi</button>
     </div>
   </div>
 

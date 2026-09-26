@@ -1,7 +1,9 @@
 const AVATAR_COUNT = 20;
 const RANKING_AVATAR_COUNT = 100;
 const STORAGE_KEY = "pokerByWProfile";
-const PROFILE_VERSION = 2;
+const GAME_STORAGE_KEY = "roadOfPokerSavedGame";
+const PROFILE_VERSION = 3;
+const GAME_VERSION = 1;
 const PRIZES = [100, 250, 150, 400, 200, 125, 300, 175];
 const money = new Intl.NumberFormat("fr-FR", {
   style: "currency",
@@ -54,8 +56,55 @@ const RANKING_NAMES = [
   "Kwame Boateng", "Sakura Watanabe", "Amir Hosseini", "Eva Schneider", "Javier Morales", "Nadia Farouk", "Felix Hartmann", "Céline Marchand", "Pablo Rojas", "Rina Suzuki", "Bilal Qureshi",
   "Natasha Evans", "André Gomes", "Seyi Adeyemi", "Mila Novak", "Tariq Mahmoud", "Élodie Mercier", "Felipe Castro", "Ji-Won Lee", "Layla Hassan", "Oscar Lindberg", "Ana Torres"
 ];
-const BOT_NAMES = RANKING_NAMES.slice(0, 18);
+const PLAYER_NATIONS = [
+  "🇫🇷|France", "🇪🇸|Espagne", "🇯🇵|Japon", "🇸🇳|Sénégal", "🇪🇸|Espagne", "🇺🇸|États-Unis", "🇮🇳|Inde", "🇮🇹|Italie", "🇨🇳|Chine", "🇦🇪|Émirats arabes unis", "🇧🇷|Brésil",
+  "🇫🇷|France", "🇧🇷|Brésil", "🇺🇸|États-Unis", "🇸🇳|Sénégal", "🇯🇵|Japon", "🇦🇪|Émirats arabes unis", "🇧🇷|Brésil", "🇷🇺|Russie", "🇳🇬|Nigeria", "🇬🇧|Royaume-Uni", "🇲🇽|Mexique",
+  "🇫🇷|France", "🇲🇦|Maroc", "🇯🇵|Japon", "🇮🇷|Iran", "🇧🇷|Brésil", "🇬🇧|Royaume-Uni", "🇮🇳|Inde", "🇺🇸|États-Unis", "🇮🇹|Italie", "🇸🇳|Sénégal", "🇰🇷|Corée du Sud",
+  "🇪🇸|Espagne", "🇺🇸|États-Unis", "🇯🇵|Japon", "🇱🇧|Liban", "🇧🇷|Brésil", "🇫🇷|France", "🇮🇳|Inde", "🇸🇳|Sénégal", "🇬🇧|Royaume-Uni", "🇮🇹|Italie", "🇨🇳|Chine",
+  "🇮🇱|Israël", "🇲🇽|Mexique", "🇱🇧|Liban", "🇬🇧|Royaume-Uni", "🇰🇷|Corée du Sud", "🇵🇹|Portugal", "🇫🇷|France", "🇮🇳|Inde", "🇺🇸|États-Unis", "🇮🇹|Italie", "🇨🇳|Chine",
+  "🇪🇬|Égypte", "🇨🇴|Colombie", "🇩🇪|Allemagne", "🇯🇵|Japon", "🇪🇬|Égypte", "🇫🇷|France", "🇧🇷|Brésil", "🇬🇭|Ghana", "🇬🇧|Royaume-Uni", "🇮🇳|Inde", "🇮🇹|Italie",
+  "🇨🇳|Chine", "🇫🇷|France", "🇸🇳|Sénégal", "🇷🇺|Russie", "🇦🇪|Émirats arabes unis", "🇧🇷|Brésil", "🇬🇧|Royaume-Uni", "🇯🇵|Japon", "🇮🇳|Inde", "🇫🇷|France", "🇧🇷|Brésil",
+  "🇬🇭|Ghana", "🇯🇵|Japon", "🇮🇷|Iran", "🇩🇪|Allemagne", "🇪🇸|Espagne", "🇪🇬|Égypte", "🇩🇪|Allemagne", "🇫🇷|France", "🇨🇱|Chili", "🇯🇵|Japon", "🇵🇰|Pakistan",
+  "🇬🇧|Royaume-Uni", "🇵🇹|Portugal", "🇳🇬|Nigeria", "🇷🇸|Serbie", "🇵🇰|Pakistan", "🇫🇷|France", "🇧🇷|Brésil", "🇰🇷|Corée du Sud", "🇱🇧|Liban", "🇸🇪|Suède", "🇪🇸|Espagne"
+];
+const FEMALE_FIRST_NAMES = new Set([
+  "Amélie", "Hana", "Sofia", "Priya", "Mei", "Camila", "Valentina", "Aïcha", "Nora", "Elena", "Mia", "Chloé", "Leila", "Isla", "Zoe", "Fatou", "Lucía", "Aya", "Beatriz", "Ananya", "Freya", "Sarah", "Lina", "Yuna", "Inès", "Giulia", "Mariam", "Emma", "Salma", "Larissa", "Olivia", "Alessia", "Clara", "Amina", "Grace", "Neha", "Mariana", "Sakura", "Eva", "Nadia", "Céline", "Rina", "Natasha", "Mila", "Élodie", "Layla", "Ana"
+]);
+const FEMALE_AVATARS = [1,3,6,9,11,12,14,17,19,21,23,25,28,31,32,35,36,39,40,42,44,45,46,49,52,54,55,58,60,61,63,64,67,68,71,72,73,79,81,84,85,87,89,92,95,96,99];
+const MALE_AVATARS = [0,2,4,5,7,8,10,13,15,16,18,20,22,24,26,27,29,30,33,34,37,38,41,43,47,48,50,51,53,56,57,59,62,65,66,69,70,74,75,76,77,78,80,82,83,86,88,90,91,93,94,97,98];
+const PLAYER_STYLES = [
+  { name: "Serré", fold: 0.17, aggression: -0.04, bluff: 0.02 },
+  { name: "Prudent", fold: 0.10, aggression: -0.08, bluff: 0.03 },
+  { name: "Équilibré", fold: 0, aggression: 0, bluff: 0.06 },
+  { name: "Agressif", fold: -0.09, aggression: 0.15, bluff: 0.10 },
+  { name: "Bluffeur", fold: -0.04, aggression: 0.08, bluff: 0.18 }
+];
 const STREET_LABELS = { preflop: "Pré-flop", flop: "Flop", turn: "Turn", river: "River" };
+
+function buildRoster() {
+  const used = new Set();
+  return RANKING_NAMES.map((name, index) => {
+    const female = FEMALE_FIRST_NAMES.has(name.split(" ")[0]);
+    const preferred = female ? FEMALE_AVATARS : MALE_AVATARS;
+    const start = (index * 7) % preferred.length;
+    let avatar = Array.from({ length: preferred.length }, (_, offset) => preferred[(start + offset) % preferred.length]).find(candidate => !used.has(candidate));
+    if (avatar === undefined) avatar = Array.from({ length: RANKING_AVATAR_COUNT }, (_, candidate) => candidate).find(candidate => !used.has(candidate));
+    used.add(avatar);
+    const [flag, country] = (PLAYER_NATIONS[index] || "🌍|International").split("|");
+    return {
+      name,
+      avatar,
+      flag,
+      country,
+      gender: female ? "F" : "M",
+      style: PLAYER_STYLES[index % PLAYER_STYLES.length],
+      gains: Math.max(750, Math.round(420000 * Math.pow((99 - index) / 99, 2.15))),
+      wins: Math.max(0, Math.round(22 * Math.pow((99 - index) / 99, 1.45)))
+    };
+  });
+}
+
+const PLAYER_ROSTER = buildRoster();
 
 function defaultProfile() {
   return {
@@ -67,6 +116,7 @@ function defaultProfile() {
     wins: 0,
     champion: 0,
     gains: 0,
+    tournamentGains: 0,
     played: 0,
     podiums: 0,
     unlockedTable: 0,
@@ -79,16 +129,14 @@ function loadProfile() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!stored) return defaultProfile();
-    if (stored.version !== PROFILE_VERSION) {
-      return {
-        ...defaultProfile(),
-        name: typeof stored.name === "string" ? stored.name : "",
-        avatar: Number.isInteger(stored.avatar) ? stored.avatar : 0,
-        createdAt: stored.createdAt || new Date().toISOString(),
-        lastSpin: stored.lastSpin || null
-      };
-    }
-    return { ...defaultProfile(), ...stored };
+    return {
+      ...defaultProfile(),
+      ...stored,
+      version: PROFILE_VERSION,
+      name: typeof stored.name === "string" ? stored.name : "",
+      avatar: Number.isInteger(stored.avatar) ? stored.avatar : 0,
+      tournamentGains: Number.isFinite(stored.tournamentGains) ? stored.tournamentGains : 0
+    };
   } catch {
     return defaultProfile();
   }
@@ -253,8 +301,8 @@ function submitProfile() {
 }
 
 function calculateRank() {
-  const progress = profile.unlockedTable * 5 + profile.podiums * 3 + profile.wins * 6;
-  return Math.max(1, 100 - progress);
+  const betterPlayers = PLAYER_ROSTER.filter(player => player.gains > profile.tournamentGains).length;
+  return Math.min(100, betterPlayers + 1);
 }
 
 function updateProfileUI() {
@@ -276,7 +324,7 @@ function updateProfileUI() {
     "stats-rank": `#${profile.rank}`,
     "stat-champion": profile.champion,
     "stat-wins": profile.wins,
-    "stat-gains": money.format(profile.gains),
+    "stat-gains": money.format(profile.tournamentGains),
     "stat-played": profile.played,
     "stat-podiums": `Top 3 : ${profile.podiums}`,
     "stat-best-table": `${bestTable.city} · table ${bestTable.prestige}`,
@@ -366,7 +414,6 @@ function spinWheel() {
   document.getElementById("wheel-message").textContent = "La roue tourne…";
   window.setTimeout(() => {
     profile.balance += prize;
-    profile.gains += prize;
     profile.lastSpin = todayKey();
     saveProfile();
     renderTables();
@@ -385,27 +432,22 @@ function updateWheelState() {
 }
 
 function makeRanking() {
-  const opponentAvatars = [
-    ...Array.from({ length: AVATAR_COUNT }, (_, index) => index).filter(index => index !== profile.avatar),
-    ...Array.from({ length: RANKING_AVATAR_COUNT - AVATAR_COUNT }, (_, index) => AVATAR_COUNT + index)
-  ];
-  const players = RANKING_NAMES.map((name, i) => ({
-    rank: i + 1,
-    name,
-    avatar: opponentAvatars[i],
-    wins: Math.max(0, 18 - Math.floor(i / 6)),
-    gains: Math.max(900, 418000 - i * 4050)
-  }));
-  const rankIndex = Math.min(99, Math.max(0, profile.rank - 1));
-  players.splice(rankIndex, 0, {
-    rank: profile.rank,
+  const opponents = PLAYER_ROSTER.map(player => ({ ...player }));
+  const players = [...opponents, {
     name: profile.name || "Vous",
     avatar: profile.avatar,
     wins: profile.wins,
-    gains: profile.gains,
+    gains: profile.tournamentGains,
+    flag: "♠",
+    country: "Votre profil",
     current: true
-  });
-  return players.map((player, index) => ({ ...player, rank: index + 1 }));
+  }].sort((a, b) => b.gains - a.gains || b.wins - a.wins || a.name.localeCompare(b.name, "fr"));
+  const ranked = players.slice(0, 100).map((player, index) => ({ ...player, rank: index + 1 }));
+  if (!ranked.some(player => player.current)) {
+    ranked[99] = { ...players.find(player => player.current), rank: 100 };
+  }
+  profile.rank = ranked.find(player => player.current)?.rank || 100;
+  return ranked;
 }
 
 function renderRanking() {
@@ -413,11 +455,21 @@ function renderRanking() {
   const podiumOrder = [players[1], players[0], players[2]];
   const classes = ["second", "first", "third"];
   document.getElementById("podium").innerHTML = podiumOrder.map((player, i) => `<article class="podium-card ${classes[i]}"><div class="podium-rank">${player.rank}</div><img src="${avatarPath(player.avatar)}" alt=""><strong>${player.name}</strong><small>${money.format(player.gains)}</small></article>`).join("");
-  document.getElementById("ranking-list").innerHTML = players.map(player => `<div class="rank-row ${player.rank <= 6 ? "qualifier" : ""} ${player.current ? "current" : ""}"><span class="rank-number">${player.rank <= 6 ? "★ " : ""}${player.rank}</span><div class="rank-player"><img src="${avatarPath(player.avatar)}" alt=""><span>${player.name}${player.current ? " (vous)" : ""}</span></div><span>${player.wins}</span><span>${money.format(player.gains)}</span></div>`).join("");
+  document.getElementById("ranking-list").innerHTML = players.map(player => `<div class="rank-row ${player.rank <= 6 ? "qualifier" : ""} ${player.current ? "current" : ""}"><span class="rank-number">${player.rank <= 6 ? "★ " : ""}${player.rank}</span><div class="rank-player"><img src="${avatarPath(player.avatar)}" alt=""><span>${player.flag || "🌍"} ${player.name}${player.current ? " (vous)" : ""}<small>${player.country || "International"}</small></span></div><span>${player.wins}</span><span>${money.format(player.gains)}</span></div>`).join("");
   document.getElementById("qualifiers").innerHTML = players.slice(0, 6).map((player, i) => `<div class="qualifier-seat seat-${i + 1}"><img src="${avatarPath(player.avatar)}" alt=""><strong>${player.name}</strong><small>#${player.rank}</small></div>`).join("");
   document.getElementById("qualification-note").innerHTML = profile.rank <= 6
     ? "<strong>Vous êtes qualifié.</strong> Votre siège est réservé pour la finale."
     : `Vous êtes actuellement <strong>#${profile.rank}</strong>. Atteignez le top 6 avant la fin de la saison pour rejoindre cette table.`;
+  const challengers = players.slice(0, 6).filter(player => !player.current);
+  const challenge = document.getElementById("worldcup-challenge");
+  challenge.innerHTML = challengers.map(player => `<option value="${player.name}">${player.flag || "🌍"} #${player.rank} · ${player.name}</option>`).join("");
+  const canPlayWorldCup = profile.rank <= 6 && profile.balance >= 10000;
+  document.getElementById("start-worldcup").disabled = !canPlayWorldCup;
+  document.getElementById("worldcup-action-note").textContent = profile.rank > 6
+    ? "Atteignez le top 6 pour participer."
+    : profile.balance < 10000
+      ? "Qualification acquise, mais il faut 10 000 $ pour entrer."
+      : "Votre siège est prêt. Toutes les places sont payées.";
 }
 
 function switchView(viewName) {
@@ -460,6 +512,7 @@ function takeBet(player, requested) {
   const paid = Math.max(0, Math.min(player.stack, Math.floor(requested)));
   player.stack -= paid;
   player.currentBet += paid;
+  player.handContribution = (player.handContribution || 0) + paid;
   game.currentBet = Math.max(game.currentBet, player.currentBet);
   return paid;
 }
@@ -501,6 +554,127 @@ function currentBlinds() {
   };
 }
 
+function applyTableTheme(table) {
+  document.getElementById("game-title").textContent = table.isWorldCup ? "Table Coupe du monde" : `Table de ${table.city}`;
+  document.getElementById("game-tier").textContent = table.isWorldCup ? "Finale mondiale · 6 qualifiés" : `Niveau ${table.prestige} · ${table.tier}`;
+  const pokerTable = document.querySelector(".poker-table");
+  pokerTable.style.setProperty("--table-color", table.color);
+  pokerTable.style.setProperty("--table-accent", table.accent);
+  pokerTable.style.setProperty("--table-image", `url('assets/tables/${table.slug}.webp')`);
+}
+
+function rosterPlayer(entry, startingStack, rank) {
+  return {
+    name: entry.name,
+    avatar: entry.avatar,
+    flag: entry.flag,
+    country: entry.country,
+    style: entry.style,
+    worldRank: rank,
+    human: false,
+    stack: startingStack,
+    cards: [],
+    folded: false,
+    eliminated: false,
+    currentBet: 0,
+    handContribution: 0,
+    finishPlace: null
+  };
+}
+
+function createGame(table, tableIndex, opponents, options = {}) {
+  const startingStack = table.big * 50;
+  return {
+    version: GAME_VERSION,
+    table,
+    tableIndex,
+    isWorldCup: Boolean(options.isWorldCup),
+    challengeName: options.challengeName || null,
+    featuredName: options.featuredName || null,
+    players: [{
+      name: profile.name || "Vous",
+      avatar: profile.avatar,
+      flag: "♠",
+      country: "Votre profil",
+      style: PLAYER_STYLES[2],
+      worldRank: profile.rank,
+      human: true,
+      stack: startingStack,
+      cards: [],
+      folded: false,
+      eliminated: false,
+      currentBet: 0,
+      handContribution: 0,
+      finishPlace: null
+    }, ...opponents.map(({ entry, rank }) => rosterPlayer(entry, startingStack, rank))],
+    deck: [],
+    community: [],
+    pot: 0,
+    currentBet: 0,
+    street: "preflop",
+    dealer: -1,
+    smallBlindIndex: -1,
+    bigBlindIndex: -1,
+    handNumber: 0,
+    handOver: false,
+    awaitingPlayer: false,
+    respondingToRaise: false,
+    revealBots: false,
+    nextFinishPlace: 6,
+    log: [],
+    finished: false
+  };
+}
+
+function saveGameState() {
+  if (!game || game.finished) return;
+  localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(game));
+  updateResumeButton();
+}
+
+function clearSavedGame() {
+  localStorage.removeItem(GAME_STORAGE_KEY);
+  updateResumeButton();
+}
+
+function getSavedGame() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(GAME_STORAGE_KEY));
+    return saved?.version === GAME_VERSION && !saved.finished && Array.isArray(saved.players) ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function updateResumeButton() {
+  const button = document.getElementById("resume-game");
+  if (button) button.classList.toggle("hidden", !getSavedGame());
+}
+
+function resumeTournament() {
+  const saved = getSavedGame();
+  if (!saved) {
+    showToast("Aucune partie à reprendre.");
+    updateResumeButton();
+    return;
+  }
+  game = saved;
+  applyTableTheme(game.table);
+  document.getElementById("game-log").innerHTML = "";
+  switchView("game");
+  setGameOrientation(true);
+  if (game.handNumber === 0) {
+    newHand();
+    showToast("Partie reprise.");
+    return;
+  }
+  renderGame();
+  const log = document.getElementById("game-log");
+  log.innerHTML = game.log.map(line => `<p>${line}</p>`).join("");
+  document.getElementById("next-hand").classList.toggle("hidden", !game.handOver);
+  showToast("Partie reprise.");
+}
+
 function startTournament(tableIndex) {
   if (game && !game.finished) {
     switchView("game");
@@ -520,52 +694,49 @@ function startTournament(tableIndex) {
   profile.balance -= table.buyIn;
   profile.played += 1;
   saveProfile();
-  const startingStack = table.big * 50;
-  game = {
-    table,
-    tableIndex,
-    players: Array.from({ length: 6 }, (_, index) => ({
-      name: index === 0 ? (profile.name || "Vous") : BOT_NAMES[(tableIndex * 3 + index - 1) % BOT_NAMES.length],
-      avatar: index === 0 ? profile.avatar : (tableIndex * 5 + index * 3) % AVATAR_COUNT,
-      human: index === 0,
-      stack: startingStack,
-      cards: [],
-      folded: false,
-      eliminated: false,
-      currentBet: 0
-    })),
-    deck: [],
-    community: [],
-    pot: 0,
-    currentBet: 0,
-    street: "preflop",
-    dealer: -1,
-    smallBlindIndex: -1,
-    bigBlindIndex: -1,
-    handNumber: 0,
-    handOver: false,
-    awaitingPlayer: false,
-    respondingToRaise: false,
-    revealBots: false,
-    log: [],
-    finished: false
-  };
-  document.getElementById("game-title").textContent = `Table de ${table.city}`;
-  document.getElementById("game-tier").textContent = `Niveau ${table.prestige} · ${table.tier}`;
-  const pokerTable = document.querySelector(".poker-table");
-  pokerTable.style.setProperty("--table-color", table.color);
-  pokerTable.style.setProperty("--table-accent", table.accent);
-  pokerTable.style.setProperty("--table-image", `url('assets/tables/${table.slug}.webp')`);
+  const featured = Math.random() < 0.2 ? PLAYER_ROSTER[Math.floor(Math.random() * 15)] : null;
+  const pool = PLAYER_ROSTER.filter(entry => entry !== featured);
+  const opponents = Array.from({ length: 5 }, (_, offset) => {
+    const entry = offset === 0 && featured ? featured : pool[(tableIndex * 11 + offset * 13) % pool.length];
+    return { entry, rank: PLAYER_ROSTER.indexOf(entry) + 1 };
+  });
+  game = createGame(table, tableIndex, opponents, { featuredName: featured?.name });
+  applyTableTheme(table);
   switchView("game");
   setGameOrientation(true);
+  saveGameState();
+  if (featured) {
+    document.getElementById("featured-player-avatar").src = avatarPath(featured.avatar);
+    document.getElementById("featured-player-copy").innerHTML = `${featured.flag} <strong>#${PLAYER_ROSTER.indexOf(featured) + 1} ${featured.name}</strong>, style ${featured.style.name}, rejoint la table. Finissez devant ce joueur pour gagner un bonus de <strong>${money.format(table.buyIn * 2)}</strong>.`;
+    document.getElementById("featured-player-modal").classList.remove("hidden");
+  } else {
+    newHand();
+  }
+}
+
+function startWorldCup() {
+  if (profile.rank > 6 || profile.balance < 10000 || game) return;
+  const challengeName = document.getElementById("worldcup-challenge").value;
+  const worldTable = { city: "Coupe du monde", code: "WPC", slug: "las-vegas", color: "#3c1765", accent: "#f3d58e", buyIn: 10000, small: 500, big: 1000, tier: "Finale mondiale", prestige: 16, isWorldCup: true };
+  const qualifiers = makeRanking().filter(player => !player.current).slice(0, 5).map(player => ({
+    entry: PLAYER_ROSTER.find(entry => entry.name === player.name),
+    rank: player.rank
+  })).filter(player => player.entry);
+  if (qualifiers.length < 5) return;
+  profile.balance -= worldTable.buyIn;
+  profile.played += 1;
+  saveProfile();
+  game = createGame(worldTable, -1, qualifiers, { isWorldCup: true, challengeName });
+  applyTableTheme(worldTable);
+  switchView("game");
+  setGameOrientation(true);
+  saveGameState();
   newHand();
 }
 
 function newHand() {
   if (!game || game.finished) return;
-  game.players.forEach(player => {
-    if (player.stack <= 0) player.eliminated = true;
-  });
+  recordEliminations();
   if (checkTournamentEnd()) return;
 
   game.handNumber += 1;
@@ -583,6 +754,7 @@ function newHand() {
     player.cards = [];
     player.folded = player.eliminated;
     player.currentBet = 0;
+    player.handContribution = 0;
   });
 
   game.dealer = nextActiveIndex(game.dealer);
@@ -645,17 +817,18 @@ function renderGame() {
     if (index === game.bigBlindIndex) tags.push('<span class="seat-status">BB</span>');
     if (player.folded && !player.eliminated) tags.push('<span class="seat-status">Fold</span>');
     if (player.eliminated) tags.push('<span class="seat-status">Éliminé</span>');
+    if (!player.human && player.style) tags.push(`<span class="seat-status">${player.style.name}</span>`);
     const reveal = player.human || game.revealBots;
     const cards = player.cards.map(card => cardHTML(card, !reveal || player.folded)).join("");
     const wager = player.currentBet > 0
       ? `<div class="seat-wager" aria-label="${player.currentBet.toLocaleString("fr-FR")} jetons misés"><span class="chip-stack" aria-hidden="true"><i></i><i></i><i></i></span><strong>${player.currentBet.toLocaleString("fr-FR")}</strong></div>`
       : "";
     return `<div class="game-seat seat-${index} ${player.eliminated ? "eliminated" : ""} ${player.folded ? "folded" : ""} ${player.human && game.awaitingPlayer ? "current-turn" : ""}">
+      ${wager}
       <div class="seat-cards">${cards}</div>
       <img class="seat-avatar" src="${avatarPath(player.avatar)}" alt="">
-      <span class="seat-name">${player.human ? "Vous" : player.name}${tags.join("")}</span>
+      <span class="seat-name">${player.human ? "Vous" : `${player.flag || "🌍"} ${player.name}`}${tags.join("")}</span>
       <span class="seat-stack">${player.stack.toLocaleString("fr-FR")} jetons</span>
-      ${wager}
     </div>`;
   }).join("");
 
@@ -680,6 +853,7 @@ function renderGame() {
   raiseInput.disabled = !canAct || maxRaise <= 0;
   document.getElementById("raise-output").value = Number(raiseInput.value).toLocaleString("fr-FR");
   document.getElementById("action-raise").disabled = !canAct || maxRaise <= 0;
+  document.getElementById("action-allin").disabled = !canAct || human.stack <= toCall;
 
   const allCards = [...human.cards, ...game.community];
   document.getElementById("player-hand-name").textContent = allCards.length >= 5
@@ -690,6 +864,7 @@ function renderGame() {
     : game.awaitingPlayer
       ? (toCall > 0 ? `À vous : ${toCall} jetons à suivre.` : "À vous : parole ou relance.")
       : "Les adversaires jouent…";
+  if (game.awaitingPlayer || game.handOver) saveGameState();
 }
 
 async function playerAction(action) {
@@ -759,16 +934,20 @@ async function runBots(humanRaised, allowReraise = true) {
     const strength = PokerEngine.estimateStrength(bot.cards, game.community);
     const pressure = toCall / Math.max(1, bot.stack + toCall);
     const roll = Math.random();
+    const style = bot.style || PLAYER_STYLES[2];
+    const skill = 1 - Math.min(100, bot.worldRank || 100) / 100;
 
     if (toCall > 0) {
-      const foldThreshold = Math.max(0.05, 0.62 - strength * 0.075 + pressure * 0.65);
-      if (roll < foldThreshold && bot.stack > toCall) {
+      const weakHandPenalty = strength < 3.2 ? 0.13 + skill * 0.12 : -skill * 0.08;
+      const foldThreshold = Math.min(0.92, Math.max(0.04, 0.52 - strength * 0.07 + pressure * 0.72 + style.fold + weakHandPenalty));
+      if (roll < foldThreshold) {
         bot.folded = true;
         addGameLog(`${bot.name} se couche.`);
       } else {
         const paid = takeBet(bot, toCall);
         addGameLog(paid < toCall ? `${bot.name} suit à tapis pour ${paid}.` : `${bot.name} suit ${paid}.`);
-        const canReraise = allowReraise && !reraiseUsed && bot.stack > 0 && strength >= 5.8 && Math.random() < 0.3;
+        const raiseChance = Math.max(0.04, 0.16 + style.aggression + skill * 0.16);
+        const canReraise = allowReraise && !reraiseUsed && bot.stack > 0 && strength >= (5.9 - skill * 0.7) && Math.random() < raiseChance;
         if (canReraise) {
           const extra = Math.min(bot.stack, currentBlinds().big * (2 + Math.floor(strength / 3)));
           const raised = takeBet(bot, extra);
@@ -779,8 +958,8 @@ async function runBots(humanRaised, allowReraise = true) {
         }
       }
     } else {
-      const betChance = Math.min(0.55, 0.04 + strength * 0.055);
-      const bluff = strength < 2.3 && Math.random() < 0.08;
+      const betChance = Math.min(0.72, 0.04 + strength * 0.055 + style.aggression + skill * 0.08);
+      const bluff = strength < 2.3 && Math.random() < style.bluff;
       if ((betChance > Math.random() || bluff) && bot.stack > 0 && allowReraise) {
         const size = Math.min(bot.stack, currentBlinds().big * (bluff ? 2 : 1 + Math.floor(strength / 2)));
         const paid = takeBet(bot, size);
@@ -857,22 +1036,41 @@ function showdown() {
   if (!contenders.length) return;
   collectStreetBets();
   game.revealBots = true;
-  let best = null;
-  let winners = [];
+  const scores = new Map();
   contenders.forEach(player => {
     const score = PokerEngine.evaluateBest([...player.cards, ...game.community]);
+    scores.set(player, score);
     addGameLog(`${player.human ? "Vous" : player.name} : ${PokerEngine.handName(score)}.`);
-    const comparison = best ? PokerEngine.compareScores(score, best) : 1;
-    if (comparison > 0) {
-      best = score;
-      winners = [player];
-    } else if (comparison === 0) {
-      winners.push(player);
-    }
   });
-  const share = Math.floor(game.pot / winners.length);
-  winners.forEach(winner => { winner.stack += share; });
-  addGameLog(`${winners.map(player => player.human ? "Vous" : player.name).join(" et ")} gagne${winners.length > 1 ? "nt" : ""} ${share} jetons avec ${PokerEngine.handName(best)}.`);
+  const levels = [...new Set(game.players.map(player => player.handContribution || 0).filter(Boolean))].sort((a, b) => a - b);
+  let previousLevel = 0;
+  levels.forEach((level, potIndex) => {
+    const contributors = game.players.filter(player => (player.handContribution || 0) >= level);
+    const potAmount = (level - previousLevel) * contributors.length;
+    const eligible = contributors.filter(player => scores.has(player));
+    const candidates = eligible.length ? eligible : contenders;
+    let best = null;
+    let winners = [];
+    candidates.forEach(player => {
+      const score = scores.get(player);
+      const comparison = best ? PokerEngine.compareScores(score, best) : 1;
+      if (comparison > 0) {
+        best = score;
+        winners = [player];
+      } else if (comparison === 0) {
+        winners.push(player);
+      }
+    });
+    const share = Math.floor(potAmount / winners.length);
+    let remainder = potAmount - share * winners.length;
+    winners.forEach(winner => {
+      winner.stack += share + (remainder > 0 ? 1 : 0);
+      remainder = Math.max(0, remainder - 1);
+    });
+    const potName = potIndex === 0 ? "pot principal" : `pot secondaire ${potIndex}`;
+    addGameLog(`${winners.map(player => player.human ? "Vous" : player.name).join(" et ")} gagne${winners.length > 1 ? "nt" : ""} le ${potName} de ${potAmount} jetons avec ${PokerEngine.handName(best)}.`);
+    previousLevel = level;
+  });
   game.pot = 0;
   finishHand();
 }
@@ -891,12 +1089,19 @@ function awardUncontestedPot() {
 function finishHand() {
   game.handOver = true;
   game.awaitingPlayer = false;
-  game.players.forEach(player => {
-    if (player.stack <= 0) player.eliminated = true;
-  });
+  recordEliminations();
   renderGame();
   if (checkTournamentEnd()) return;
   document.getElementById("next-hand").classList.remove("hidden");
+}
+
+function recordEliminations() {
+  if (!game) return;
+  game.players.filter(player => player.stack <= 0 && !player.eliminated).forEach(player => {
+    player.eliminated = true;
+    player.finishPlace = game.nextFinishPlace;
+    game.nextFinishPlace = Math.max(2, game.nextFinishPlace - 1);
+  });
 }
 
 function checkTournamentEnd() {
@@ -904,7 +1109,7 @@ function checkTournamentEnd() {
   const human = game.players[0];
   const alive = remainingTournamentPlayers();
   if (human.stack <= 0 || human.eliminated) {
-    const place = alive.filter(player => !player.human).length + 1;
+    const place = human.finishPlace || alive.filter(player => !player.human).length + 1;
     finishTournament(place);
     return true;
   }
@@ -918,33 +1123,47 @@ function checkTournamentEnd() {
 function finishTournament(place) {
   if (!game || game.finished) return;
   game.finished = true;
-  const multipliers = { 1: 3.2, 2: 1.8, 3: 1.2 };
+  const multipliers = game.isWorldCup
+    ? { 1: 40, 2: 24, 3: 15, 4: 10, 5: 7, 6: 4 }
+    : { 1: 3.2, 2: 1.8, 3: 1.2 };
   const payout = Math.floor(game.table.buyIn * (multipliers[place] || 0));
+  const targetName = game.isWorldCup ? game.challengeName : game.featuredName;
+  const target = game.players.find(player => player.name === targetName);
+  const challengeWon = Boolean(target?.finishPlace && place < target.finishPlace);
+  const challengeBonus = challengeWon ? game.table.buyIn * 2 : 0;
   if (payout > 0) {
     profile.balance += payout;
     profile.gains += payout;
+    profile.tournamentGains += payout;
+  }
+  if (challengeBonus > 0) {
+    profile.balance += challengeBonus;
+    profile.gains += challengeBonus;
+    profile.tournamentGains += challengeBonus;
   }
   if (place === 1) profile.wins += 1;
-  if (place <= 3) {
-    profile.podiums += 1;
+  if (place <= 3) profile.podiums += 1;
+  if (!game.isWorldCup && place <= 3) {
     if (game.tableIndex === profile.unlockedTable && profile.unlockedTable < TABLES.length - 1) {
       profile.unlockedTable += 1;
     }
-    if (game.tableIndex === TABLES.length - 1 && place === 1) profile.champion += 1;
   }
+  if (game.isWorldCup && place === 1) profile.champion += 1;
   profile.rank = calculateRank();
   saveProfile();
+  clearSavedGame();
 
-  const unlocked = place <= 3 && game.tableIndex < TABLES.length - 1
+  const unlocked = !game.isWorldCup && place <= 3 && game.tableIndex < TABLES.length - 1
     ? `<p>La table de <strong>${TABLES[game.tableIndex + 1].city}</strong> est maintenant déverrouillée.</p>`
     : "";
   const overlay = document.createElement("div");
   overlay.className = "result-overlay";
   overlay.innerHTML = `<div class="result-card">
-    <span class="eyebrow">Tournoi de ${game.table.city}</span>
+    <span class="eyebrow">${game.isWorldCup ? "Coupe du monde" : `Tournoi de ${game.table.city}`}</span>
     <div class="result-place">${place}<sup>${place === 1 ? "er" : "e"}</sup></div>
     <h2>${place <= 3 ? "Vous montez sur le podium !" : "Tournoi terminé"}</h2>
     <p>${payout > 0 ? `Gain : <strong>${money.format(payout)}</strong>` : "Aucun gain cette fois."}</p>
+    ${challengeBonus ? `<p>Défi remporté contre <strong>${targetName}</strong> : bonus de <strong>${money.format(challengeBonus)}</strong>.</p>` : ""}
     ${unlocked}
     <button class="primary-btn" id="result-continue" type="button">Retour aux tables</button>
   </div>`;
@@ -966,6 +1185,7 @@ function leaveTable() {
   }
   game.finished = true;
   game = null;
+  clearSavedGame();
   renderAll();
   setGameOrientation(false);
   switchView("tables");
@@ -1041,6 +1261,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("action-allin").addEventListener("click", () => playerAction("allin"));
   document.getElementById("next-hand").addEventListener("click", newHand);
   document.getElementById("leave-table").addEventListener("click", leaveTable);
+  document.getElementById("resume-game").addEventListener("click", resumeTournament);
+  document.getElementById("start-worldcup").addEventListener("click", startWorldCup);
+  document.getElementById("featured-player-start").addEventListener("click", () => {
+    document.getElementById("featured-player-modal").classList.add("hidden");
+    if (game && game.handNumber === 0) newHand();
+  });
   document.getElementById("raise-amount").addEventListener("input", event => {
     document.getElementById("raise-output").value = Number(event.target.value).toLocaleString("fr-FR");
   });
@@ -1054,11 +1280,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.key === "Escape") closeInstallGuide();
   });
   updateInstallButtons();
+  updateResumeButton();
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("service-worker.js").catch(() => {});
   }
   renderAll();
   registerWebMCP();
-  if (!profile.name) openProfileModal(true);
-  else document.getElementById("profile-modal").classList.add("hidden");
+  window.setTimeout(() => {
+    if (!profile.name) openProfileModal(true);
+    else document.getElementById("profile-modal").classList.add("hidden");
+    document.body.classList.add("app-ready");
+    document.body.classList.remove("is-loading");
+  }, 650);
 });

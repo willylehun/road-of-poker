@@ -1,4 +1,4 @@
-const CACHE_NAME = "road-of-poker-v7";
+const CACHE_NAME = "road-of-poker-v9";
 const CORE_ASSETS = [
   "./",
   "./index.html",
