@@ -833,6 +833,7 @@ function renderGame() {
   }).join("");
 
   const human = game.players[0];
+  document.getElementById("player-hole-cards").innerHTML = human.cards.map(card => cardHTML(card)).join("");
   const toCall = amountToCall(human);
   const callButton = document.getElementById("action-call");
   callButton.textContent = toCall > 0 ? `Suivre ${Math.min(toCall, human.stack)}` : "Parole";

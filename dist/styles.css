@@ -226,7 +226,7 @@ p { color: var(--muted); }
 .chip-stack i:nth-child(1) { top:8px; }
 .chip-stack i:nth-child(2) { top:4px; background:#174f8a; }
 .chip-stack i:nth-child(3) { top:0; background:#a52f3b; }
-.game-seat.seat-0 .seat-wager { left:50%; top:-39px; transform:translateX(-50%); }
+.game-seat.seat-0 .seat-wager { left:50%; top:-50px; transform:translateX(-50%); }
 .game-seat.seat-3 .seat-wager { left:50%; top:calc(100% + 8px); transform:translateX(-50%); }
 .game-seat.seat-1 .seat-wager,
 .game-seat.seat-2 .seat-wager { left:calc(100% - 10px); top:48%; transform:translateY(-50%); }
@@ -234,9 +234,9 @@ p { color: var(--muted); }
 .game-seat.seat-5 .seat-wager { right:calc(100% - 10px); top:48%; transform:translateY(-50%); }
 .poker-table.collecting-bets .pot-chip { animation:pot-collect .44s ease both; }
 @keyframes pot-collect { 0% { transform:scale(1); box-shadow:0 0 0 rgba(243,213,142,0); } 45% { transform:scale(1.18); box-shadow:0 0 22px rgba(243,213,142,.5); } 100% { transform:scale(1); box-shadow:0 0 0 rgba(243,213,142,0); } }
-.seat-cards { height:38px; display:flex; justify-content:center; gap:3px; margin-top:-11px; }
-.seat-cards .playing-card { width:27px; height:38px; border-radius:4px; padding:2px; font-size:.55rem; }
-.seat-cards .playing-card .card-suit { font-size:.72rem; }
+.seat-cards { position:relative; z-index:5; height:50px; display:flex; justify-content:center; gap:4px; margin-top:-13px; }
+.seat-cards .playing-card { width:35px; height:49px; border-radius:5px; padding:3px; font-size:.66rem; }
+.seat-cards .playing-card .card-suit { font-size:.88rem; }
 .game-seat.seat-0 { left:50%; top:84%; }
 .game-seat.seat-1 { left:18%; top:68%; }
 .game-seat.seat-2 { left:20%; top:28%; }
@@ -248,6 +248,11 @@ p { color: var(--muted); }
 .hand-summary span { color:var(--muted); }
 .hand-summary strong { color:var(--gold-light); }
 .game-actions { display:grid; grid-template-columns:repeat(2,minmax(120px,1fr)) minmax(210px,1.4fr) repeat(2,minmax(110px,1fr)); gap:9px; max-width:920px; margin:0 auto; }
+.player-hole-card-panel { grid-column:1/-1; display:flex; align-items:center; justify-content:center; gap:14px; min-height:112px; padding:8px 14px; border:1px solid rgba(216,173,87,.24); border-radius:14px; background:radial-gradient(circle at 50% 35%,rgba(216,173,87,.1),rgba(0,0,0,.18)); }
+.player-hole-card-panel > span { color:var(--gold-light); font-size:.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.player-hole-cards { display:flex; justify-content:center; gap:8px; min-width:132px; }
+.player-hole-cards .playing-card { width:58px; height:82px; padding:6px; font-size:1rem; }
+.player-hole-cards .playing-card .card-suit { font-size:1.55rem; }
 .poker-action { min-height:48px; border-radius:11px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.055); cursor:pointer; font-weight:800; }
 .poker-action:hover:not(:disabled) { transform:translateY(-2px); }
 .poker-action.fold { color:#ff9ba2; border-color:rgba(181,64,73,.4); }
@@ -466,6 +471,7 @@ legend { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
   .game-seat.seat-4 { left:83%; top:28%; }
   .game-seat.seat-5 { left:85%; top:70%; }
   .game-actions { grid-template-columns:repeat(2,1fr); }
+  .player-hole-card-panel { min-height:105px; }
   .raise-control { grid-column:1/-1; order:-1; }
   .poker-action.next { grid-column:1/-1; }
   .hand-summary { align-items:flex-start; flex-direction:column; gap:2px; }
@@ -514,6 +520,11 @@ legend { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
   body.game-mode .hand-summary span,
   body.game-mode .hand-summary strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   body.game-mode .game-actions { grid-column: 2; grid-row: 2; width: 100%; max-width: none; margin: 0; grid-template-columns: 1fr 1fr; align-content: center; gap: 5px; }
+  body.game-mode .player-hole-card-panel { grid-column:1/-1; min-height:82px; padding:3px 7px; gap:8px; border-radius:9px; }
+  body.game-mode .player-hole-card-panel > span { font-size:.55rem; }
+  body.game-mode .player-hole-cards { min-width:112px; gap:6px; }
+  body.game-mode .player-hole-cards .playing-card { width:48px; height:68px; padding:4px; border-radius:6px; font-size:.78rem; }
+  body.game-mode .player-hole-cards .playing-card .card-suit { font-size:1.15rem; }
   body.game-mode .poker-action { min-height: 36px; padding: 5px; border-radius: 8px; font-size: .72rem; }
   body.game-mode .raise-control { grid-column: 1 / -1; order: 0; min-height: 36px; padding: 3px 6px; gap: 5px; border-radius: 8px; font-size: .6rem; }
   body.game-mode .raise-control input { min-width: 45px; width: 100%; }
@@ -526,7 +537,7 @@ legend { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
   body.game-mode .pot-chip { padding: 2px 8px; font-size: .58rem; }
   body.game-mode .table-felt-brand { top: 63%; font-size: .78rem; }
   body.game-mode .table-felt-brand small { font-size: .36rem; }
-  body.game-mode .game-seat { width: 94px; min-height: 64px; }
+  body.game-mode .game-seat { width: 104px; min-height: 76px; }
   body.game-mode .game-seat .seat-avatar { width: 31px; height: 31px; border-width: 1px; }
   body.game-mode .seat-name { max-width: 88px; margin-top: 0; font-size: .58rem; line-height: 1.1; }
   body.game-mode .seat-stack { font-size: .55rem; line-height: 1; }
@@ -537,15 +548,15 @@ legend { color: var(--muted); font-size: .82rem; margin-bottom: 10px; }
   body.game-mode .chip-stack i:nth-child(1) { top: 7px; }
   body.game-mode .chip-stack i:nth-child(2) { top: 4px; }
   body.game-mode .chip-stack i:nth-child(3) { top: 1px; }
-  body.game-mode .game-seat.seat-0 .seat-wager { top: -30px; }
+  body.game-mode .game-seat.seat-0 .seat-wager { top: -43px; }
   body.game-mode .game-seat.seat-3 .seat-wager { top: calc(100% + 1px); }
   body.game-mode .game-seat.seat-1 .seat-wager,
   body.game-mode .game-seat.seat-2 .seat-wager { left: calc(100% - 5px); }
   body.game-mode .game-seat.seat-4 .seat-wager,
   body.game-mode .game-seat.seat-5 .seat-wager { right: calc(100% - 5px); }
-  body.game-mode .seat-cards { height: 25px; gap: 2px; margin-top: -7px; }
-  body.game-mode .seat-cards .playing-card { width: 18px; height: 25px; padding: 1px; font-size: .4rem; }
-  body.game-mode .seat-cards .playing-card .card-suit { font-size: .48rem; }
+  body.game-mode .seat-cards { height: 38px; gap: 3px; margin-top: -9px; }
+  body.game-mode .seat-cards .playing-card { width: 27px; height: 37px; padding: 2px; font-size: .5rem; }
+  body.game-mode .seat-cards .playing-card .card-suit { font-size: .67rem; }
   body.game-mode .dealer-button { width: 14px; height: 14px; font-size: .48rem; }
   body.game-mode .game-seat.seat-0 { left: 50%; top: 82%; }
   body.game-mode .game-seat.seat-1 { left: 15%; top: 69%; }
