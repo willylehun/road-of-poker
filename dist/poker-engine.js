@@ -23,6 +23,15 @@
     "Couleur", "Full", "Carré", "Quinte flush"
   ];
 
+  function secureRandom() {
+    if (globalThis.crypto?.getRandomValues) {
+      const value = new Uint32Array(1);
+      globalThis.crypto.getRandomValues(value);
+      return value[0] / 4294967296;
+    }
+    return Math.random();
+  }
+
   function createDeck() {
     return SUITS.flatMap(suit => RANKS.map(rank => ({
       id: `${rank.rank}_${suit.id}`,
@@ -34,7 +43,7 @@
     })));
   }
 
-  function shuffle(cards, random = Math.random) {
+  function shuffle(cards, random = secureRandom) {
     const result = [...cards];
     for (let i = result.length - 1; i > 0; i -= 1) {
       const j = Math.floor(random() * (i + 1));

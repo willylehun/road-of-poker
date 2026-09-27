@@ -1,3 +1,25 @@
 .sites-runtime/
 *.tgz
 *.zip
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+local.properties
+*.jks
+*.keystore
+*.pem
+*.key
+*.p12
+
+# Generated build and dependency data
+.gradle/
+**/build/
+node_modules/
+coverage/
+
+# IDE and operating-system files
+.idea/
+*.iml
+.DS_Store

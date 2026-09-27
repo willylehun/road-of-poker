@@ -1,4 +1,4 @@
-const CACHE_NAME = "road-of-poker-v12";
+const CACHE_NAME = "road-of-poker-v13";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,11 @@ const CORE_ASSETS = [
   "./poker-engine.js",
   "./manifest.webmanifest",
   "./offline.html",
+  "./offline.js",
+  "./assets/fonts/dm-sans-latin.woff2",
+  "./assets/fonts/dm-sans-latin-ext.woff2",
+  "./assets/fonts/playfair-display-latin.woff2",
+  "./assets/fonts/playfair-display-latin-ext.woff2",
   "./icons/icon.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -29,13 +34,14 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   const requestUrl = new URL(event.request.url);
+  if (!["http:", "https:"].includes(requestUrl.protocol)) return;
   const sameOrigin = requestUrl.origin === self.location.origin;
   const needsFreshVersion = event.request.mode === "navigate" || ["script", "style"].includes(event.request.destination);
 
   if (sameOrigin && needsFreshVersion) {
     event.respondWith(
       fetch(event.request, { cache: "no-store" }).then(response => {
-        if (response.ok) {
+        if (response.ok && response.type === "basic" && new URL(response.url).origin === self.location.origin) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
         }
@@ -46,7 +52,7 @@ self.addEventListener("fetch", event => {
   }
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-      if (response.ok && sameOrigin) {
+      if (response.ok && sameOrigin && response.type === "basic" && new URL(response.url).origin === self.location.origin) {
         const copy = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
       }

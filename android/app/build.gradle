@@ -4,19 +4,27 @@ plugins {
 
 android {
     namespace "com.byw.roadofpoker"
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.byw.roadofpoker"
         minSdk 24
-        targetSdk 35
-        versionCode 3
-        versionName "1.2.0"
+        targetSdk 36
+        versionCode 4
+        versionName "1.3.0"
     }
 
     buildTypes {
+        debug {
+            debuggable false
+        }
         release {
             minifyEnabled false
         }
+    }
+
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
     }
 }

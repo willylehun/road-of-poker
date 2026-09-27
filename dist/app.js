@@ -4,6 +4,7 @@ const STORAGE_KEY = "pokerByWProfile";
 const GAME_STORAGE_KEY = "roadOfPokerSavedGame";
 const PROFILE_VERSION = 3;
 const GAME_VERSION = 1;
+const MAX_STORED_AMOUNT = 1_000_000_000_000;
 const PRIZES = [100, 250, 150, 400, 200, 125, 300, 175];
 const money = new Intl.NumberFormat("fr-FR", {
   style: "currency",
@@ -12,6 +13,44 @@ const money = new Intl.NumberFormat("fr-FR", {
 });
 
 let deferredInstallPrompt = null;
+
+if (window.self !== window.top) {
+  window.stop();
+  document.documentElement.textContent = "";
+  throw new Error("Road of Poker ne peut pas être intégré dans une iframe.");
+}
+
+function secureRandom() {
+  if (globalThis.crypto?.getRandomValues) {
+    const value = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(value);
+    return value[0] / 4294967296;
+  }
+  return Math.random();
+}
+
+function boundedInteger(value, fallback, minimum, maximum) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number)) return fallback;
+  return Math.min(maximum, Math.max(minimum, number));
+}
+
+function sanitizeText(value, maximumLength = 180) {
+  if (typeof value !== "string") return "";
+  return value.normalize("NFC")
+    .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, "")
+    .slice(0, maximumLength);
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
 
 window.addEventListener("beforeinstallprompt", event => {
   event.preventDefault();
@@ -129,14 +168,26 @@ function defaultProfile() {
 function loadProfile() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!stored) return defaultProfile();
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) return defaultProfile();
+    const defaults = defaultProfile();
+    const createdAt = typeof stored.createdAt === "string" && Number.isFinite(Date.parse(stored.createdAt))
+      ? stored.createdAt
+      : defaults.createdAt;
     return {
-      ...defaultProfile(),
-      ...stored,
       version: PROFILE_VERSION,
-      name: typeof stored.name === "string" ? stored.name : "",
-      avatar: Number.isInteger(stored.avatar) ? stored.avatar : 0,
-      tournamentGains: Number.isFinite(stored.tournamentGains) ? stored.tournamentGains : 0
+      name: sanitizeText(stored.name, 18).trim().replace(/\s+/g, " "),
+      avatar: boundedInteger(stored.avatar, defaults.avatar, 0, AVATAR_COUNT - 1),
+      balance: boundedInteger(stored.balance, defaults.balance, 0, MAX_STORED_AMOUNT),
+      rank: boundedInteger(stored.rank, defaults.rank, 1, 100),
+      wins: boundedInteger(stored.wins, defaults.wins, 0, 1_000_000),
+      champion: boundedInteger(stored.champion, defaults.champion, 0, 1_000_000),
+      gains: boundedInteger(stored.gains, defaults.gains, 0, MAX_STORED_AMOUNT),
+      tournamentGains: boundedInteger(stored.tournamentGains, defaults.tournamentGains, 0, MAX_STORED_AMOUNT),
+      played: boundedInteger(stored.played, defaults.played, 0, 1_000_000),
+      podiums: boundedInteger(stored.podiums, defaults.podiums, 0, 1_000_000),
+      unlockedTable: boundedInteger(stored.unlockedTable, defaults.unlockedTable, 0, TABLES.length - 1),
+      lastSpin: typeof stored.lastSpin === "string" && /^\d{4}-\d{2}-\d{2}$/.test(stored.lastSpin) ? stored.lastSpin : null,
+      createdAt
     };
   } catch {
     return defaultProfile();
@@ -150,12 +201,17 @@ let wheelRotation = 0;
 let game = null;
 
 function saveProfile() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  } catch {
+    showToast("Le profil ne peut pas être enregistré sur cet appareil.");
+  }
   updateProfileUI();
 }
 
 function avatarPath(index) {
-  return `assets/avatars/avatar-${String(index).padStart(2, "0")}.webp`;
+  const safeIndex = boundedInteger(index, 0, 0, RANKING_AVATAR_COUNT - 1);
+  return `assets/avatars/avatar-${String(safeIndex).padStart(2, "0")}.webp`;
 }
 
 function todayKey() {
@@ -286,7 +342,7 @@ function closeProfileModal() {
 function submitProfile() {
   const input = document.getElementById("player-name-input");
   const error = document.getElementById("profile-error");
-  const name = input.value.trim().replace(/\s+/g, " ");
+  const name = sanitizeText(input.value, 18).trim().replace(/\s+/g, " ");
   if (name.length < 2) {
     error.textContent = "Choisissez un nom d’au moins 2 caractères.";
     input.focus();
@@ -436,7 +492,7 @@ function spinWheel() {
   const button = document.getElementById("spin-button");
   const wheel = document.getElementById("daily-wheel");
   button.disabled = true;
-  const index = Math.floor(Math.random() * PRIZES.length);
+  const index = Math.floor(secureRandom() * PRIZES.length);
   const prize = PRIZES[index];
   const target = 360 - (index * 45 + 22.5);
   wheelRotation = Math.ceil(wheelRotation / 360) * 360 + 1800 + target;
@@ -484,15 +540,15 @@ function renderRanking() {
   const players = makeRanking();
   const podiumOrder = [players[1], players[0], players[2]];
   const classes = ["second", "first", "third"];
-  document.getElementById("podium").innerHTML = podiumOrder.map((player, i) => `<article class="podium-card ${classes[i]}"><div class="podium-rank">${player.rank}</div><img src="${avatarPath(player.avatar)}" alt=""><strong>${player.name}</strong><small>${money.format(player.gains)}</small></article>`).join("");
-  document.getElementById("ranking-list").innerHTML = players.map(player => `<div class="rank-row ${player.rank <= 6 ? "qualifier" : ""} ${player.current ? "current" : ""}"><span class="rank-number">${player.rank <= 6 ? "★ " : ""}${player.rank}</span><div class="rank-player"><img src="${avatarPath(player.avatar)}" alt=""><span>${player.flag || "🌍"} ${player.name}${player.current ? " (vous)" : ""}<small>${player.country || "International"}</small></span></div><span>${player.wins}</span><span>${money.format(player.gains)}</span></div>`).join("");
-  document.getElementById("qualifiers").innerHTML = players.slice(0, 6).map((player, i) => `<div class="qualifier-seat seat-${i + 1}"><img src="${avatarPath(player.avatar)}" alt=""><strong>${player.name}</strong><small>#${player.rank}</small></div>`).join("");
+  document.getElementById("podium").innerHTML = podiumOrder.map((player, i) => `<article class="podium-card ${classes[i]}"><div class="podium-rank">${player.rank}</div><img src="${avatarPath(player.avatar)}" alt=""><strong>${escapeHTML(player.name)}</strong><small>${money.format(player.gains)}</small></article>`).join("");
+  document.getElementById("ranking-list").innerHTML = players.map(player => `<div class="rank-row ${player.rank <= 6 ? "qualifier" : ""} ${player.current ? "current" : ""}"><span class="rank-number">${player.rank <= 6 ? "★ " : ""}${player.rank}</span><div class="rank-player"><img src="${avatarPath(player.avatar)}" alt=""><span>${escapeHTML(player.flag || "🌍")} ${escapeHTML(player.name)}${player.current ? " (vous)" : ""}<small>${escapeHTML(player.country || "International")}</small></span></div><span>${player.wins}</span><span>${money.format(player.gains)}</span></div>`).join("");
+  document.getElementById("qualifiers").innerHTML = players.slice(0, 6).map((player, i) => `<div class="qualifier-seat seat-${i + 1}"><img src="${avatarPath(player.avatar)}" alt=""><strong>${escapeHTML(player.name)}</strong><small>#${player.rank}</small></div>`).join("");
   document.getElementById("qualification-note").innerHTML = profile.rank <= 6
     ? "<strong>Vous êtes qualifié.</strong> Votre siège est réservé pour la finale."
     : `Vous êtes actuellement <strong>#${profile.rank}</strong>. Atteignez le top 6 avant la fin de la saison pour rejoindre cette table.`;
   const challengers = players.slice(0, 6).filter(player => !player.current);
   const challenge = document.getElementById("worldcup-challenge");
-  challenge.innerHTML = challengers.map(player => `<option value="${player.name}">${player.flag || "🌍"} #${player.rank} · ${player.name}</option>`).join("");
+  challenge.innerHTML = challengers.map(player => `<option value="${escapeHTML(player.name)}">${escapeHTML(player.flag || "🌍")} #${player.rank} · ${escapeHTML(player.name)}</option>`).join("");
   const canPlayWorldCup = profile.rank <= 6 && profile.balance >= 10000;
   document.getElementById("start-worldcup").disabled = !canPlayWorldCup;
   document.getElementById("worldcup-action-note").textContent = profile.rank > 6
@@ -656,9 +712,85 @@ function createGame(table, tableIndex, opponents, options = {}) {
   };
 }
 
+const CANONICAL_CARDS = new Map(PokerEngine.createDeck().map(card => [card.id, card]));
+
+function restoreCards(value, maximumLength) {
+  if (!Array.isArray(value) || value.length > maximumLength) return null;
+  const cards = value.map(card => {
+    const canonical = card && typeof card.id === "string" ? CANONICAL_CARDS.get(card.id) : null;
+    return canonical ? { ...canonical } : null;
+  });
+  return cards.some(card => !card) ? null : cards;
+}
+
+function restorePlayer(value, index) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const cards = restoreCards(value.cards, 2);
+  if (!cards) return null;
+  const rosterEntry = index === 0 ? null : PLAYER_ROSTER.find(entry => entry.name === value.name);
+  if (index > 0 && !rosterEntry) return null;
+  const identity = index === 0
+    ? { name: profile.name || "Vous", avatar: profile.avatar, flag: "♠", country: "Votre profil", style: PLAYER_STYLES[2], worldRank: profile.rank, human: true }
+    : { name: rosterEntry.name, avatar: rosterEntry.avatar, flag: rosterEntry.flag, country: rosterEntry.country, style: rosterEntry.style, worldRank: PLAYER_ROSTER.indexOf(rosterEntry) + 1, human: false };
+  return {
+    ...identity,
+    stack: boundedInteger(value.stack, 0, 0, MAX_STORED_AMOUNT),
+    cards,
+    folded: Boolean(value.folded),
+    eliminated: Boolean(value.eliminated),
+    currentBet: boundedInteger(value.currentBet, 0, 0, MAX_STORED_AMOUNT),
+    handContribution: boundedInteger(value.handContribution, 0, 0, MAX_STORED_AMOUNT),
+    finishPlace: value.finishPlace == null ? null : boundedInteger(value.finishPlace, null, 1, 6)
+  };
+}
+
+function restoreSavedGame(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== GAME_VERSION || value.finished) return null;
+  const isWorldCup = Boolean(value.isWorldCup);
+  const tableIndex = isWorldCup ? -1 : boundedInteger(value.tableIndex, -1, 0, TABLES.length - 1);
+  if (!isWorldCup && tableIndex < 0) return null;
+  if (!Array.isArray(value.players) || value.players.length !== 6) return null;
+  const players = value.players.map(restorePlayer);
+  const deck = restoreCards(value.deck, 52);
+  const community = restoreCards(value.community, 5);
+  if (players.some(player => !player) || !deck || !community) return null;
+  const allCards = [...deck, ...community, ...players.flatMap(player => player.cards)];
+  if (allCards.length > 52 || new Set(allCards.map(card => card.id)).size !== allCards.length) return null;
+  const knownOpponentName = candidate => typeof candidate === "string" && PLAYER_ROSTER.some(entry => entry.name === candidate) ? candidate : null;
+  return {
+    version: GAME_VERSION,
+    table: isWorldCup ? WORLD_CUP_TABLE : TABLES[tableIndex],
+    tableIndex,
+    isWorldCup,
+    challengeName: knownOpponentName(value.challengeName),
+    featuredName: knownOpponentName(value.featuredName),
+    players,
+    deck,
+    community,
+    pot: boundedInteger(value.pot, 0, 0, MAX_STORED_AMOUNT),
+    currentBet: boundedInteger(value.currentBet, 0, 0, MAX_STORED_AMOUNT),
+    street: ["preflop", "flop", "turn", "river"].includes(value.street) ? value.street : "preflop",
+    dealer: boundedInteger(value.dealer, -1, -1, 5),
+    smallBlindIndex: boundedInteger(value.smallBlindIndex, -1, -1, 5),
+    bigBlindIndex: boundedInteger(value.bigBlindIndex, -1, -1, 5),
+    handNumber: boundedInteger(value.handNumber, 0, 0, 1_000_000),
+    handOver: Boolean(value.handOver),
+    awaitingPlayer: Boolean(value.awaitingPlayer),
+    respondingToRaise: Boolean(value.respondingToRaise),
+    revealBots: Boolean(value.revealBots),
+    nextFinishPlace: boundedInteger(value.nextFinishPlace, 6, 2, 6),
+    log: Array.isArray(value.log) ? value.log.slice(-100).map(line => sanitizeText(line, 240)) : [],
+    finished: false
+  };
+}
+
 function saveGameState() {
   if (!game || game.finished) return;
-  localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(game));
+  try {
+    localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(game));
+  } catch {
+    showToast("La partie ne peut pas être sauvegardée sur cet appareil.");
+  }
   updateResumeButton();
 }
 
@@ -670,10 +802,21 @@ function clearSavedGame() {
 function getSavedGame() {
   try {
     const saved = JSON.parse(localStorage.getItem(GAME_STORAGE_KEY));
-    return saved?.version === GAME_VERSION && !saved.finished && Array.isArray(saved.players) ? saved : null;
+    return restoreSavedGame(saved);
   } catch {
     return null;
   }
+}
+
+function renderGameLog() {
+  const log = document.getElementById("game-log");
+  const entries = game?.log || [];
+  log.replaceChildren(...entries.map(line => {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = line;
+    return paragraph;
+  }));
+  log.scrollTop = log.scrollHeight;
 }
 
 function updateResumeButton() {
@@ -699,8 +842,7 @@ function resumeTournament() {
     return;
   }
   renderGame();
-  const log = document.getElementById("game-log");
-  log.innerHTML = game.log.map(line => `<p>${line}</p>`).join("");
+  renderGameLog();
   document.getElementById("next-hand").classList.toggle("hidden", !game.handOver);
   showToast("Partie reprise.");
 }
@@ -724,7 +866,7 @@ function startTournament(tableIndex) {
   profile.balance -= table.buyIn;
   profile.played += 1;
   saveProfile();
-  const featured = Math.random() < 0.2 ? PLAYER_ROSTER[Math.floor(Math.random() * 15)] : null;
+  const featured = secureRandom() < 0.2 ? PLAYER_ROSTER[Math.floor(secureRandom() * 15)] : null;
   const pool = PLAYER_ROSTER.filter(entry => entry !== featured);
   const opponents = Array.from({ length: 5 }, (_, offset) => {
     const entry = offset === 0 && featured ? featured : pool[(tableIndex * 11 + offset * 13) % pool.length];
@@ -737,7 +879,7 @@ function startTournament(tableIndex) {
   saveGameState();
   if (featured) {
     document.getElementById("featured-player-avatar").src = avatarPath(featured.avatar);
-    document.getElementById("featured-player-copy").innerHTML = `${featured.flag} <strong>#${PLAYER_ROSTER.indexOf(featured) + 1} ${featured.name}</strong>, style ${featured.style.name}, rejoint la table. Finissez devant ce joueur pour gagner un bonus de <strong>${money.format(table.buyIn * 2)}</strong>.`;
+    document.getElementById("featured-player-copy").innerHTML = `${escapeHTML(featured.flag)} <strong>#${PLAYER_ROSTER.indexOf(featured) + 1} ${escapeHTML(featured.name)}</strong>, style ${escapeHTML(featured.style.name)}, rejoint la table. Finissez devant ce joueur pour gagner un bonus de <strong>${money.format(table.buyIn * 2)}</strong>.`;
     document.getElementById("featured-player-modal").classList.remove("hidden");
   } else {
     newHand();
@@ -827,16 +969,14 @@ function newHand() {
 
 function addGameLog(message) {
   if (!game) return;
-  game.log.push(message);
-  const log = document.getElementById("game-log");
-  log.innerHTML = game.log.map(line => `<p>${line}</p>`).join("");
-  log.scrollTop = log.scrollHeight;
+  game.log.push(sanitizeText(message, 240));
+  renderGameLog();
 }
 
 function cardHTML(card, hidden = false, empty = false) {
   if (empty) return '<div class="playing-card empty"></div>';
   if (hidden) return '<div class="playing-card back">W</div>';
-  return `<div class="playing-card ${card.color === "red" ? "red" : ""}"><span>${card.rank}</span><span class="card-suit">${card.symbol}</span></div>`;
+  return `<div class="playing-card ${card.color === "red" ? "red" : ""}"><span>${escapeHTML(card.rank)}</span><span class="card-suit">${escapeHTML(card.symbol)}</span></div>`;
 }
 
 function ensurePlayerHoleCards() {
@@ -872,7 +1012,7 @@ function renderGame() {
     if (index === game.bigBlindIndex) tags.push('<span class="seat-status">BB</span>');
     if (player.folded && !player.eliminated) tags.push('<span class="seat-status">Fold</span>');
     if (player.eliminated) tags.push('<span class="seat-status">Éliminé</span>');
-    if (!player.human && player.style) tags.push(`<span class="seat-status">${player.style.name}</span>`);
+    if (!player.human && player.style) tags.push(`<span class="seat-status">${escapeHTML(player.style.name)}</span>`);
     const reveal = player.human || game.revealBots;
     const cards = player.cards.map(card => cardHTML(card, !reveal || player.folded)).join("");
     const wager = player.currentBet > 0
@@ -882,7 +1022,7 @@ function renderGame() {
       ${wager}
       <div class="seat-cards">${cards}</div>
       <img class="seat-avatar" src="${avatarPath(player.avatar)}" alt="">
-      <span class="seat-name">${player.human ? "Vous" : `${player.flag || "🌍"} ${player.name}`}${tags.join("")}</span>
+      <span class="seat-name">${player.human ? "Vous" : `${escapeHTML(player.flag || "🌍")} ${escapeHTML(player.name)}`}${tags.join("")}</span>
       <span class="seat-stack">${player.stack.toLocaleString("fr-FR")} jetons</span>
     </div>`;
   }).join("");
@@ -990,7 +1130,7 @@ async function runBots(humanRaised, allowReraise = true) {
     const toCall = amountToCall(bot);
     const strength = PokerEngine.estimateStrength(bot.cards, game.community);
     const pressure = toCall / Math.max(1, bot.stack + toCall);
-    const roll = Math.random();
+    const roll = secureRandom();
     const style = bot.style || PLAYER_STYLES[2];
     const skill = 1 - Math.min(100, bot.worldRank || 100) / 100;
 
@@ -1004,7 +1144,7 @@ async function runBots(humanRaised, allowReraise = true) {
         const paid = takeBet(bot, toCall);
         addGameLog(paid < toCall ? `${bot.name} suit à tapis pour ${paid}.` : `${bot.name} suit ${paid}.`);
         const raiseChance = Math.max(0.04, 0.16 + style.aggression + skill * 0.16);
-        const canReraise = allowReraise && !reraiseUsed && bot.stack > 0 && strength >= (5.9 - skill * 0.7) && Math.random() < raiseChance;
+        const canReraise = allowReraise && !reraiseUsed && bot.stack > 0 && strength >= (5.9 - skill * 0.7) && secureRandom() < raiseChance;
         if (canReraise) {
           const extra = Math.min(bot.stack, currentBlinds().big * (2 + Math.floor(strength / 3)));
           const raised = takeBet(bot, extra);
@@ -1016,8 +1156,8 @@ async function runBots(humanRaised, allowReraise = true) {
       }
     } else {
       const betChance = Math.min(0.72, 0.04 + strength * 0.055 + style.aggression + skill * 0.08);
-      const bluff = strength < 2.3 && Math.random() < style.bluff;
-      if ((betChance > Math.random() || bluff) && bot.stack > 0 && allowReraise) {
+      const bluff = strength < 2.3 && secureRandom() < style.bluff;
+      if ((betChance > secureRandom() || bluff) && bot.stack > 0 && allowReraise) {
         const size = Math.min(bot.stack, currentBlinds().big * (bluff ? 2 : 1 + Math.floor(strength / 2)));
         const paid = takeBet(bot, size);
         addGameLog(bluff ? `${bot.name} tente un bluff à ${paid}.` : `${bot.name} mise ${paid}.`);
@@ -1216,11 +1356,11 @@ function finishTournament(place) {
   const overlay = document.createElement("div");
   overlay.className = "result-overlay";
   overlay.innerHTML = `<div class="result-card">
-    <span class="eyebrow">${game.isWorldCup ? "Coupe du monde" : `Tournoi de ${game.table.city}`}</span>
+    <span class="eyebrow">${game.isWorldCup ? "Coupe du monde" : `Tournoi de ${escapeHTML(game.table.city)}`}</span>
     <div class="result-place">${place}<sup>${place === 1 ? "er" : "e"}</sup></div>
     <h2>${place <= 3 ? "Vous montez sur le podium !" : "Tournoi terminé"}</h2>
     <p>${payout > 0 ? `Gain : <strong>${money.format(payout)}</strong>` : "Aucun gain cette fois."}</p>
-    ${challengeBonus ? `<p>Défi remporté contre <strong>${targetName}</strong> : bonus de <strong>${money.format(challengeBonus)}</strong>.</p>` : ""}
+    ${challengeBonus ? `<p>Défi remporté contre <strong>${escapeHTML(targetName)}</strong> : bonus de <strong>${money.format(challengeBonus)}</strong>.</p>` : ""}
     ${unlocked}
     <button class="primary-btn" id="result-continue" type="button">Retour aux tables</button>
   </div>`;
@@ -1339,7 +1479,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateInstallButtons();
   updateResumeButton();
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js?v=12", { updateViaCache: "none" }).then(registration => registration.update()).catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=13", { updateViaCache: "none" }).then(registration => registration.update()).catch(() => {});
   }
   renderAll();
   registerWebMCP();
