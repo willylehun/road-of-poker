@@ -25,4 +25,28 @@ const shuffled = poker.shuffle(deck, () => 0.25);
 assert.equal(shuffled.length, 52);
 assert.deepEqual([...shuffled.map(item => item.id)].sort(), [...deck.map(item => item.id)].sort());
 
+const seededRandom = seed => {
+  let state = seed >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+};
+
+const acesEquity = poker.estimateEquity(hand("A_hearts", "A_spades"), [], 1, 1600, seededRandom(11));
+const sevenTwoEquity = poker.estimateEquity(hand("7_clubs", "2_diamonds"), [], 1, 1600, seededRandom(29));
+assert.ok(acesEquity > 0.78 && acesEquity < 0.92, `Équité AA inattendue : ${acesEquity}`);
+assert.ok(sevenTwoEquity > 0.25 && sevenTwoEquity < 0.45, `Équité 7-2 inattendue : ${sevenTwoEquity}`);
+assert.ok(acesEquity - sevenTwoEquity > 0.38, "Le moteur doit nettement distinguer une main premium d'une main faible");
+
+const unbeatableEquity = poker.estimateEquity(
+  hand("A_hearts", "K_hearts"),
+  hand("Q_hearts", "J_hearts", "10_hearts", "2_clubs", "3_diamonds"),
+  5,
+  80,
+  seededRandom(41)
+);
+assert.equal(unbeatableEquity, 1, "Une quinte flush royale doit conserver 100 % d'équité");
+assert.equal(poker.estimateEquity(hand("A_hearts", "A_hearts"), [], 1, 80, seededRandom(7)), 0, "Les cartes dupliquées doivent être refusées");
+
 console.log("Tests du moteur de poker réussis.");

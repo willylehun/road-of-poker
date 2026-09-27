@@ -1,0 +1,1 @@
+Adversaires plus réalistes avec calcul des probabilités de victoire, cotes du pot et adaptation aux relances répétées. Difficulté progressive sur les 15 tables.

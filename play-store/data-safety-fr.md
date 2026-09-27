@@ -1,6 +1,6 @@
 # Sécurité des données — réponses préparées
 
-Ces réponses correspondent à la version 1.4.0 telle qu’elle est actuellement publiée. Elles doivent être revérifiées si une publicité, un SDK d’analyse, un compte en ligne, une API ou un paiement est ajouté.
+Ces réponses correspondent à la version 1.5.0 telle qu’elle est actuellement publiée. Elles doivent être revérifiées si une publicité, un SDK d’analyse, un compte en ligne, une API ou un paiement est ajouté.
 
 ## Collecte et partage
 

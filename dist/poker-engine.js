@@ -139,6 +139,63 @@
     return HAND_NAMES[score?.[0] || 0] || "Main inconnue";
   }
 
+  function clamp(value, minimum, maximum) {
+    return Math.min(maximum, Math.max(minimum, value));
+  }
+
+  function simulationRandom() {
+    let state = Math.floor(secureRandom() * 4294967295) || 0x9e3779b9;
+    return function random() {
+      state ^= state << 13;
+      state ^= state >>> 17;
+      state ^= state << 5;
+      return (state >>> 0) / 4294967296;
+    };
+  }
+
+  // Approximation Monte-Carlo de l'equite de la main face a des mains
+  // adverses inconnues. Les egalites sont partagees entre les gagnants.
+  function estimateEquity(holeCards, communityCards, opponentCount = 1, iterations = 100, random) {
+    if (!Array.isArray(holeCards) || holeCards.length !== 2 || !Array.isArray(communityCards) || communityCards.length > 5) return 0;
+    const knownCards = [...holeCards, ...communityCards];
+    const knownIds = new Set(knownCards.map(card => card?.id));
+    if (knownIds.has(undefined) || knownIds.size !== knownCards.length) return 0;
+
+    const opponents = clamp(Math.floor(Number(opponentCount) || 1), 1, 8);
+    const samples = clamp(Math.floor(Number(iterations) || 100), 20, 1000);
+    const boardMissing = 5 - communityCards.length;
+    const drawCount = boardMissing + opponents * 2;
+    const available = createDeck().filter(card => !knownIds.has(card.id));
+    if (drawCount > available.length) return 0;
+
+    const nextRandom = typeof random === "function" ? random : simulationRandom();
+    let equity = 0;
+    for (let sample = 0; sample < samples; sample += 1) {
+      const pool = [...available];
+      for (let index = 0; index < drawCount; index += 1) {
+        const swapIndex = index + Math.floor(nextRandom() * (pool.length - index));
+        [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
+      }
+
+      const board = [...communityCards, ...pool.slice(0, boardMissing)];
+      const heroScore = evaluateBest([...holeCards, ...board]);
+      let tiedOpponents = 0;
+      let beaten = false;
+      for (let opponent = 0; opponent < opponents; opponent += 1) {
+        const start = boardMissing + opponent * 2;
+        const opponentScore = evaluateBest([...pool.slice(start, start + 2), ...board]);
+        const comparison = compareScores(heroScore, opponentScore);
+        if (comparison < 0) {
+          beaten = true;
+          break;
+        }
+        if (comparison === 0) tiedOpponents += 1;
+      }
+      if (!beaten) equity += 1 / (tiedOpponents + 1);
+    }
+    return equity / samples;
+  }
+
   function estimateStrength(holeCards, communityCards) {
     const all = [...holeCards, ...communityCards];
     if (all.length >= 5) {
@@ -168,6 +225,7 @@
     scoreFive,
     evaluateBest,
     handName,
-    estimateStrength
+    estimateStrength,
+    estimateEquity
   };
 });

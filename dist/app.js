@@ -29,6 +29,14 @@ function secureRandom() {
   return Math.random();
 }
 
+function clampNumber(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function randomError() {
+  return (secureRandom() + secureRandom() + secureRandom()) / 3 - 0.5;
+}
+
 function boundedInteger(value, fallback, minimum, maximum) {
   const number = Number(value);
   if (!Number.isSafeInteger(number)) return fallback;
@@ -120,6 +128,37 @@ const PLAYER_STYLES = [
   { name: "Bluffeur", fold: -0.04, aggression: 0.08, bluff: 0.18 }
 ];
 const STREET_LABELS = { preflop: "Pré-flop", flop: "Flop", turn: "Turn", river: "River" };
+
+function defaultPlayerModel() {
+  return {
+    actions: 0,
+    raises: 0,
+    calls: 0,
+    checks: 0,
+    folds: 0,
+    consecutiveRaises: 0,
+    averageRaiseRatio: 0,
+    recentActions: []
+  };
+}
+
+function restorePlayerModel(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return defaultPlayerModel();
+  const model = defaultPlayerModel();
+  const allowedActions = new Set(["raise", "call", "check", "fold"]);
+  model.actions = boundedInteger(value.actions, 0, 0, 1_000_000);
+  model.raises = boundedInteger(value.raises, 0, 0, model.actions);
+  model.calls = boundedInteger(value.calls, 0, 0, model.actions);
+  model.checks = boundedInteger(value.checks, 0, 0, model.actions);
+  model.folds = boundedInteger(value.folds, 0, 0, model.actions);
+  model.consecutiveRaises = boundedInteger(value.consecutiveRaises, 0, 0, 100);
+  const ratio = Number(value.averageRaiseRatio);
+  model.averageRaiseRatio = Number.isFinite(ratio) ? clampNumber(ratio, 0, 20) : 0;
+  model.recentActions = Array.isArray(value.recentActions)
+    ? value.recentActions.slice(-12).filter(action => allowedActions.has(action))
+    : [];
+  return model;
+}
 
 function buildRoster() {
   const used = new Set();
@@ -623,6 +662,51 @@ function amountToCall(player) {
   return Math.max(0, game.currentBet - player.currentBet);
 }
 
+function tablePot() {
+  if (!game) return 0;
+  return game.pot + game.players.reduce((total, player) => total + player.currentBet, 0);
+}
+
+function observePlayerAction(action, paid = 0, potBefore = 0) {
+  if (!game) return;
+  const model = game.playerModel || defaultPlayerModel();
+  const normalized = action === "raise" || action === "allin" ? "raise" : action;
+  if (!["raise", "call", "check", "fold"].includes(normalized)) return;
+  model.actions += 1;
+  model.recentActions.push(normalized);
+  model.recentActions = model.recentActions.slice(-12);
+  if (normalized === "raise") {
+    model.raises += 1;
+    model.consecutiveRaises += 1;
+    const ratio = paid / Math.max(currentBlinds().big, potBefore);
+    model.averageRaiseRatio = ((model.averageRaiseRatio * (model.raises - 1)) + ratio) / model.raises;
+  } else {
+    model.consecutiveRaises = 0;
+    if (normalized === "call") model.calls += 1;
+    if (normalized === "check") model.checks += 1;
+    if (normalized === "fold") model.folds += 1;
+  }
+  game.playerModel = model;
+}
+
+function readPlayerPattern() {
+  const model = game?.playerModel || defaultPlayerModel();
+  const recent = model.recentActions.slice(-8);
+  const recentRaises = recent.filter(action => action === "raise").length;
+  const recentRaiseRate = recent.length ? recentRaises / recent.length : 0;
+  const raiseRate = model.actions ? model.raises / model.actions : 0;
+  const foldRate = model.actions ? model.folds / model.actions : 0;
+  const repeatedRaises = clampNumber(
+    Math.max(0, recentRaiseRate - 0.34) * 1.1 +
+    Math.max(0, raiseRate - 0.48) * 0.55 +
+    Math.max(0, model.consecutiveRaises - 1) * 0.18 +
+    Math.max(0, model.averageRaiseRatio - 0.75) * 0.08,
+    0,
+    0.7
+  );
+  return { recentRaiseRate, raiseRate, foldRate, repeatedRaises };
+}
+
 function activeInHand() {
   return game.players.filter(player => !player.eliminated && !player.folded);
 }
@@ -706,6 +790,7 @@ function createGame(table, tableIndex, opponents, options = {}) {
     awaitingPlayer: false,
     respondingToRaise: false,
     revealBots: false,
+    playerModel: defaultPlayerModel(),
     nextFinishPlace: 6,
     log: [],
     finished: false
@@ -778,6 +863,7 @@ function restoreSavedGame(value) {
     awaitingPlayer: Boolean(value.awaitingPlayer),
     respondingToRaise: Boolean(value.respondingToRaise),
     revealBots: Boolean(value.revealBots),
+    playerModel: restorePlayerModel(value.playerModel),
     nextFinishPlace: boundedInteger(value.nextFinishPlace, 6, 2, 6),
     log: Array.isArray(value.log) ? value.log.slice(-100).map(line => sanitizeText(line, 240)) : [],
     finished: false
@@ -1068,12 +1154,14 @@ async function playerAction(action) {
   if (!game?.awaitingPlayer || game.handOver) return;
   const human = game.players[0];
   const toCall = amountToCall(human);
+  const potBeforeAction = tablePot();
   const wasResponse = game.respondingToRaise;
   game.awaitingPlayer = false;
   renderGame();
 
   if (action === "fold") {
     human.folded = true;
+    observePlayerAction("fold");
     addGameLog("Vous vous couchez.");
     await pause(260);
     await runOutToShowdown();
@@ -1083,8 +1171,10 @@ async function playerAction(action) {
   if (action === "call") {
     if (toCall > 0) {
       const paid = takeBet(human, toCall);
+      observePlayerAction("call", paid, potBeforeAction);
       addGameLog(paid < toCall ? `Vous suivez à tapis pour ${paid} jetons.` : `Vous suivez ${paid} jetons.`);
     } else {
+      observePlayerAction("check");
       addGameLog("Vous dites parole.");
     }
     if (wasResponse) {
@@ -1097,6 +1187,7 @@ async function playerAction(action) {
   if (action === "raise" || action === "allin") {
     const extra = action === "allin" ? Math.max(0, human.stack - toCall) : Number(document.getElementById("raise-amount").value);
     const paid = takeBet(human, toCall + extra);
+    observePlayerAction(action, paid, potBeforeAction);
     addGameLog(action === "allin" ? `Vous faites tapis pour ${paid} jetons !` : `Vous engagez ${paid} jetons et relancez.`);
   }
 
@@ -1121,6 +1212,66 @@ async function playerAction(action) {
   else await advanceStreetOrShowdown();
 }
 
+function botSkill(bot) {
+  const prestige = clampNumber(Number(game?.table?.prestige) || 1, 1, 16);
+  const tableLevel = (prestige - 1) / 15;
+  const rankingBonus = (1 - clampNumber(Number(bot.worldRank) || 100, 1, 100) / 100) * 0.02;
+  return clampNumber(0.16 + tableLevel * 0.76 + rankingBonus, 0.16, 0.95);
+}
+
+function analyzeBotHand(bot, toCall) {
+  const opponents = Math.max(1, activeInHand().length - 1);
+  const skill = botSkill(bot);
+  const iterations = Math.round(36 + skill * 104);
+  const equity = PokerEngine.estimateEquity(bot.cards, game.community, opponents, iterations);
+  const uncertainty = 0.035 + (1 - skill) * 0.16;
+  const perceivedEquity = clampNumber(equity + randomError() * uncertainty * 2, 0.01, 0.99);
+  const expectedShare = 1 / (opponents + 1);
+  const preflopStrength = PokerEngine.estimateStrength(bot.cards, []);
+  const madeScore = game.community.length >= 3
+    ? PokerEngine.evaluateBest([...bot.cards, ...game.community])
+    : [0];
+  const strongHand = game.community.length === 0
+    ? preflopStrength >= 5.85 || equity >= expectedShare + 0.28
+    : madeScore[0] >= 2 || equity >= Math.max(0.46, expectedShare + 0.26);
+  const pattern = readPlayerPattern();
+  const adaptation = pattern.repeatedRaises * (0.3 + skill * 0.7);
+  const potBeforeCall = tablePot();
+  const potOdds = toCall > 0 ? toCall / Math.max(1, potBeforeCall + toCall) : 0;
+  const pressure = toCall / Math.max(1, bot.stack + toCall);
+  const style = bot.style || PLAYER_STYLES[2];
+  const multiwayCaution = Math.max(0, opponents - 1) * 0.018;
+  const requiredEquity = clampNumber(
+    potOdds + multiwayCaution + style.fold * 0.08 - adaptation * 0.12,
+    0.04,
+    0.9
+  );
+  return {
+    adaptation,
+    equity,
+    expectedShare,
+    madeScore,
+    pattern,
+    perceivedEquity,
+    pressure,
+    requiredEquity,
+    skill,
+    strongHand,
+    style
+  };
+}
+
+function botBetSize(bot, analysis, bluff = false) {
+  const blinds = currentBlinds();
+  const pot = Math.max(blinds.big * 2, tablePot());
+  if (!bluff && analysis.strongHand && bot.stack <= pot * (0.58 + analysis.skill * 0.2)) return bot.stack;
+  const fraction = bluff
+    ? 0.3 + secureRandom() * (0.2 + analysis.skill * 0.12)
+    : 0.38 + analysis.perceivedEquity * 0.42 + analysis.skill * 0.12;
+  const step = Math.max(1, Math.round(blinds.big / 2));
+  return Math.min(bot.stack, Math.max(blinds.big, Math.round((pot * fraction) / step) * step));
+}
+
 async function runBots(humanRaised, allowReraise = true) {
   let reraiseUsed = false;
   for (let index = 1; index < game.players.length; index += 1) {
@@ -1128,39 +1279,64 @@ async function runBots(humanRaised, allowReraise = true) {
     if (bot.eliminated || bot.folded || bot.stack <= 0) continue;
     await pause(180);
     const toCall = amountToCall(bot);
-    const strength = PokerEngine.estimateStrength(bot.cards, game.community);
-    const pressure = toCall / Math.max(1, bot.stack + toCall);
-    const roll = secureRandom();
-    const style = bot.style || PLAYER_STYLES[2];
-    const skill = 1 - Math.min(100, bot.worldRank || 100) / 100;
+    const analysis = analyzeBotHand(bot, toCall);
 
     if (toCall > 0) {
-      const weakHandPenalty = strength < 3.2 ? 0.13 + skill * 0.12 : -skill * 0.08;
-      const foldThreshold = Math.min(0.92, Math.max(0.04, 0.52 - strength * 0.07 + pressure * 0.72 + style.fold + weakHandPenalty));
-      if (roll < foldThreshold) {
+      const edge = analysis.perceivedEquity - analysis.requiredEquity;
+      const clearlyWeak = !analysis.strongHand && analysis.equity < Math.max(0.1, analysis.requiredEquity - 0.1);
+      let foldChance = clearlyWeak
+        ? 0.82 + analysis.pressure * 0.13
+        : 0.46 - edge * 2.8 + analysis.pressure * 0.28 + analysis.style.fold * 0.42 - analysis.adaptation * 0.34;
+      if (analysis.strongHand) foldChance = analysis.pressure > 0.9 && edge < -0.16 ? 0.08 : 0.012;
+      foldChance = clampNumber(foldChance, analysis.strongHand ? 0.005 : 0.06, clearlyWeak ? 0.97 : 0.94);
+
+      if (secureRandom() < foldChance) {
         bot.folded = true;
         addGameLog(`${bot.name} se couche.`);
       } else {
         const paid = takeBet(bot, toCall);
         addGameLog(paid < toCall ? `${bot.name} suit à tapis pour ${paid}.` : `${bot.name} suit ${paid}.`);
-        const raiseChance = Math.max(0.04, 0.16 + style.aggression + skill * 0.16);
-        const canReraise = allowReraise && !reraiseUsed && bot.stack > 0 && strength >= (5.9 - skill * 0.7) && secureRandom() < raiseChance;
+        const valueRaise = analysis.strongHand || edge > 0.17;
+        const counterRaise = humanRaised && analysis.adaptation > 0.1 && edge > 0.055;
+        const raiseChance = valueRaise
+          ? clampNumber(0.42 + analysis.skill * 0.3 + Math.max(0, analysis.style.aggression) * 0.45 + analysis.adaptation * 0.22, 0.34, 0.9)
+          : counterRaise
+            ? clampNumber(0.08 + analysis.skill * 0.18 + analysis.adaptation * 0.35, 0.08, 0.46)
+            : 0;
+        const canReraise = allowReraise && !reraiseUsed && bot.stack > 0 && secureRandom() < raiseChance;
         if (canReraise) {
-          const extra = Math.min(bot.stack, currentBlinds().big * (2 + Math.floor(strength / 3)));
+          const extra = botBetSize(bot, analysis, false);
+          const allIn = extra >= bot.stack;
           const raised = takeBet(bot, extra);
           if (raised > 0) {
             reraiseUsed = true;
-            addGameLog(`${bot.name} sur-relance de ${raised}.`);
+            addGameLog(allIn ? `${bot.name} sur-relance à tapis.` : `${bot.name} sur-relance de ${raised}.`);
           }
         }
       }
     } else {
-      const betChance = Math.min(0.72, 0.04 + strength * 0.055 + style.aggression + skill * 0.08);
-      const bluff = strength < 2.3 && secureRandom() < style.bluff;
-      if ((betChance > secureRandom() || bluff) && bot.stack > 0 && allowReraise) {
-        const size = Math.min(bot.stack, currentBlinds().big * (bluff ? 2 : 1 + Math.floor(strength / 2)));
+      const mediumHand = analysis.perceivedEquity >= analysis.expectedShare + 0.07 || analysis.madeScore[0] >= 1;
+      const trapChance = analysis.strongHand && analysis.pattern.repeatedRaises > 0.2
+        ? 0.07 + analysis.skill * 0.09
+        : 0;
+      const valueBetChance = analysis.strongHand
+        ? clampNumber(0.8 + analysis.skill * 0.16 + Math.max(0, analysis.style.aggression) * 0.25, 0.8, 0.97)
+        : mediumHand
+          ? clampNumber(0.2 + analysis.skill * 0.28 + analysis.style.aggression * 0.55, 0.08, 0.7)
+          : 0;
+      const bluffChance = !analysis.strongHand && !mediumHand
+        ? clampNumber(
+          analysis.style.bluff * (0.45 + analysis.skill * 0.45) * (0.75 + analysis.pattern.foldRate * 0.8) * (1 - analysis.pattern.repeatedRaises * 0.65),
+          0,
+          0.2
+        )
+        : 0;
+      const bluff = secureRandom() < bluffChance;
+      const betsForValue = secureRandom() >= trapChance && secureRandom() < valueBetChance;
+      if ((betsForValue || bluff) && bot.stack > 0 && allowReraise) {
+        const size = botBetSize(bot, analysis, bluff);
         const paid = takeBet(bot, size);
-        addGameLog(bluff ? `${bot.name} tente un bluff à ${paid}.` : `${bot.name} mise ${paid}.`);
+        addGameLog(`${bot.name} mise ${paid}.`);
         if (paid > 0) reraiseUsed = true;
       } else {
         addGameLog(`${bot.name} dit parole.`);

@@ -18,7 +18,7 @@ import android.webkit.WebViewClient;
 import android.window.OnBackInvokedDispatcher;
 
 public class MainActivity extends Activity {
-    private static final String GAME_URL = "https://willylehun.github.io/road-of-poker/?app=14";
+    private static final String GAME_URL = "https://willylehun.github.io/road-of-poker/?app=15";
     private static final String TRUSTED_HOST = "willylehun.github.io";
     private static final String TRUSTED_PATH = "/road-of-poker/";
     private WebView webView;

@@ -5,6 +5,8 @@ Road of Poker est une application mobile installable de Texas Hold’em. Le joue
 ## Fonctionnalités
 
 - parties de Texas Hold’em jouables contre cinq adversaires ;
+- adversaires adaptatifs évaluant leur équité, les cotes du pot et les habitudes de relance du joueur ;
+- difficulté croissante de Dakar à Las Vegas, puis en Coupe du monde ;
 - 15 tables avec une palette et une illustration originales ;
 - classement de 100 joueurs, dont 99 identités fictives uniques ;
 - roue quotidienne de 100 à 400 $ ;
