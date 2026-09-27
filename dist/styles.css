@@ -358,8 +358,10 @@ p { color: var(--muted); }
 .progress-track span, .style-bars i { height: 100%; display: block; background: linear-gradient(90deg, var(--green-bright), var(--gold)); border-radius: inherit; }
 .style-bars { display: grid; gap: 5px; margin-top: 10px; }
 
-footer { display: flex; justify-content: center; align-items: center; padding: 24px clamp(20px,4vw,64px); color: #6f7e75; border-top: 1px solid rgba(255,255,255,.05); font-size: .76rem; }
+footer { display: flex; justify-content: center; align-items: center; gap: 18px; padding: 24px clamp(20px,4vw,64px); color: #6f7e75; border-top: 1px solid rgba(255,255,255,.05); font-size: .76rem; }
 footer strong { color: var(--gold-light); font: 700 1rem "Playfair Display", serif; letter-spacing: .12em; }
+footer a { color: #9aa89f; text-decoration: none; }
+footer a:hover, footer a:focus-visible { color: var(--gold-light); text-decoration: underline; text-underline-offset: 3px; }
 .install-app { border:1px solid rgba(216,173,87,.28); background:rgba(216,173,87,.06); color:var(--gold-light); border-radius:999px; padding:8px 13px; cursor:pointer; font-size:.72rem; font-weight:700; }
 .install-app.ready { background:var(--gold-light); color:#07130f; box-shadow:0 6px 22px rgba(216,173,87,.18); }
 .install-app:disabled { cursor: default; opacity: .68; }

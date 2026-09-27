@@ -14,6 +14,7 @@ const requiredFiles = [
   "service-worker.js",
   "offline.html",
   "offline.js",
+  "privacy.html",
   "icons/icon-192.png",
   "icons/icon-512.png"
 ];
@@ -36,6 +37,7 @@ assert.ok(Array.isArray(manifest.icons) && manifest.icons.length >= 2, "Icônes 
 const indexHtml = readFileSync(join(dist, "index.html"), "utf8");
 assert.match(indexHtml, /http-equiv="Content-Security-Policy"/i, "CSP absente");
 assert.match(indexHtml, /name="referrer" content="no-referrer"/i, "Referrer Policy absente");
+assert.match(indexHtml, /href="privacy\.html"/i, "Lien vers la politique de confidentialité absent");
 assert.doesNotMatch(indexHtml, /\son[a-z]+\s*=/i, "Gestionnaire JavaScript inline interdit");
 assert.doesNotMatch(indexHtml, /<(script|iframe|object|embed)\b[^>]+https?:\/\//i, "Ressource active externe interdite");
 

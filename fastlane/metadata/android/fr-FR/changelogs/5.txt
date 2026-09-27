@@ -1,0 +1,1 @@
+Première version préparée pour Google Play : sécurité renforcée, politique de confidentialité publique, bundle Android et contrôles de publication.

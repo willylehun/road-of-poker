@@ -1,6 +1,6 @@
 # Road of Poker
 
-Road of Poker est une application mobile installable de Texas Hold’em. Le joueur crée son profil, choisit l’un des 20 avatars, reçoit 1 000 $, puis progresse sur 15 tables internationales. Un top 3 déverrouille la destination suivante.
+Road of Poker est une application mobile installable de Texas Hold’em. Le joueur crée son profil, choisit l’un des 100 avatars, reçoit 1 000 $, puis progresse sur 15 tables internationales. Un top 3 déverrouille la destination suivante.
 
 ## Fonctionnalités
 
@@ -29,11 +29,13 @@ Le workflow inclus publie automatiquement le dossier `dist` à chaque envoi sur 
 - **iPhone / iPad** : ouvrez le jeu dans Safari, touchez **Partager**, puis **Sur l’écran d’accueil** et **Ajouter**.
 - **Ordinateur** : dans Chrome ou Edge, cliquez sur l’icône d’installation située dans la barre d’adresse.
 
-Le bouton **Installer l’application** de l’écran d’accueil ouvre directement la fenêtre d’installation lorsqu’elle est disponible et affiche sinon le guide adapté à l’appareil.
-
 ### APK Android
 
 Une version Android native est également générée par GitHub Actions. Elle est disponible dans la section **Releases** du dépôt sous le nom `road-of-poker.apk`.
+
+### Préparation Google Play
+
+Le dossier `play-store` et les métadonnées `fastlane` contiennent les déclarations et textes préparés pour Play Console. Le workflow manuel **Build signed Play Store AAB** produira le bundle signé après configuration des quatre secrets de clé d’envoi décrits dans `play-store/README.md`.
 
 ## Structure
 

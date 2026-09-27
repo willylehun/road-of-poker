@@ -1,4 +1,4 @@
-const CACHE_NAME = "road-of-poker-v13";
+const CACHE_NAME = "road-of-poker-v14";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const CORE_ASSETS = [
   "./manifest.webmanifest",
   "./offline.html",
   "./offline.js",
+  "./privacy.html",
   "./assets/fonts/dm-sans-latin.woff2",
   "./assets/fonts/dm-sans-latin-ext.woff2",
   "./assets/fonts/playfair-display-latin.woff2",

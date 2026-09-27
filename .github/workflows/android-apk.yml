@@ -50,9 +50,9 @@ jobs:
           node scripts/validate.mjs
           node tests/poker-engine.test.cjs
 
-      - name: Lint and build installable APK
+      - name: Lint and build APK plus release bundle
         working-directory: android
-        run: gradle --no-daemon --stacktrace --warning-mode=all :app:lintDebug :app:assembleDebug
+        run: gradle --no-daemon --stacktrace --warning-mode=all :app:lintDebug :app:lintRelease :app:assembleDebug :app:bundleRelease
 
       - name: Prepare and verify APK
         run: |
@@ -94,5 +94,5 @@ jobs:
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$tag" road-of-poker.apk road-of-poker.apk.sha256 --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$tag" road-of-poker.apk road-of-poker.apk.sha256 --repo "$GITHUB_REPOSITORY" --title "Road of Poker Android 1.3.0" --notes "APK Android installable de Road of Poker. Vérifiez son intégrité avec le fichier SHA-256 joint."
+            gh release create "$tag" road-of-poker.apk road-of-poker.apk.sha256 --repo "$GITHUB_REPOSITORY" --title "Road of Poker Android 1.4.0" --notes "APK Android installable de Road of Poker. Vérifiez son intégrité avec le fichier SHA-256 joint."
           fi
