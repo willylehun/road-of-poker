@@ -15,6 +15,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.window.OnBackInvokedDispatcher;
 
 public class MainActivity extends Activity {
     private static final String GAME_URL = "https://willylehun.github.io/road-of-poker/?app=13";
@@ -78,6 +79,13 @@ public class MainActivity extends Activity {
             }
         });
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                this::handleBackNavigation
+            );
+        }
+
         webView.loadUrl(GAME_URL);
     }
 
@@ -103,11 +111,16 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void handleBackNavigation() {
+        if (webView != null && webView.canGoBack()) webView.goBack();
+        else finish();
+    }
+
+    @SuppressLint("GestureBackNavigation")
     @SuppressWarnings("deprecation")
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+        handleBackNavigation();
     }
 
     @Override
