@@ -1339,7 +1339,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateInstallButtons();
   updateResumeButton();
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js?v=11", { updateViaCache: "none" }).then(registration => registration.update()).catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=12", { updateViaCache: "none" }).then(registration => registration.update()).catch(() => {});
   }
   renderAll();
   registerWebMCP();
