@@ -1,4 +1,4 @@
-const CACHE_NAME = "road-of-poker-v10";
+const CACHE_NAME = "road-of-poker-v11";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -28,9 +28,25 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
+  const requestUrl = new URL(event.request.url);
+  const sameOrigin = requestUrl.origin === self.location.origin;
+  const needsFreshVersion = event.request.mode === "navigate" || ["script", "style"].includes(event.request.destination);
+
+  if (sameOrigin && needsFreshVersion) {
+    event.respondWith(
+      fetch(event.request, { cache: "no-store" }).then(response => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        }
+        return response;
+      }).catch(() => caches.match(event.request).then(cached => cached || caches.match(event.request.mode === "navigate" ? "./index.html" : event.request)))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-      if (response.ok && new URL(event.request.url).origin === self.location.origin) {
+      if (response.ok && sameOrigin) {
         const copy = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
       }

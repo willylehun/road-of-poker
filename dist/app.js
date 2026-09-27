@@ -44,6 +44,7 @@ const TABLES = [
   { city: "Dubaï", code: "DXB", slug: "dubai", color: "#151515", accent: "#e0b34f", buyIn: 6500, small: 250, big: 500, tier: "Super High Roller", prestige: 14, players: 297 },
   { city: "Las Vegas", code: "LAS", slug: "las-vegas", color: "#591c75", accent: "#f04455", buyIn: 10000, small: 500, big: 1000, tier: "Table légendaire", prestige: 15, players: 486 }
 ];
+const WORLD_CUP_TABLE = { city: "Coupe du monde", code: "WPC", slug: "las-vegas", color: "#3c1765", accent: "#f3d58e", buyIn: 10000, small: 500, big: 1000, tier: "Finale mondiale", prestige: 16, isWorldCup: true };
 
 const RANKING_NAMES = [
   "Amélie Laurent", "Mateo Salazar", "Hana Nakamura", "Idrissa Ndiaye", "Sofia Marin", "Noah Bennett", "Priya Kapoor", "Luca Moretti", "Mei Lin", "Omar Haddad", "Camila Ribeiro",
@@ -362,6 +363,17 @@ function tableCard(table, index) {
   </article>`;
 }
 
+function worldCupTableCard() {
+  const qualified = profile.rank <= 6;
+  const affordable = profile.balance >= WORLD_CUP_TABLE.buyIn;
+  const buttonLabel = !qualified ? "🔒 Top 6 requis" : affordable ? "Jouer maintenant" : "Solde insuffisant";
+  return `<article class="table-card world-cup-table-card ${qualified ? "playable" : "locked"}" tabindex="${qualified && affordable ? "0" : "-1"}" style="--table-color:${WORLD_CUP_TABLE.color};--table-accent:${WORLD_CUP_TABLE.accent};--table-image:url('assets/tables/${WORLD_CUP_TABLE.slug}.webp')">
+    <div class="city-row"><div><span class="eyebrow">Niveau ultime · ${WORLD_CUP_TABLE.tier}</span><h3>${WORLD_CUP_TABLE.city}</h3><p>Tournoi Texas Hold’em · 6 joueurs</p></div><span class="city-marker">WC</span></div>
+    <div class="table-meta"><span>Entrée<strong>${money.format(WORLD_CUP_TABLE.buyIn)}</strong></span><span>Blindes<strong>${WORLD_CUP_TABLE.small} / ${WORLD_CUP_TABLE.big}</strong></span></div>
+    <div class="table-action">${qualified ? "" : '<span class="unlock-requirement">Classement top 6 requis</span>'}<button class="join-btn ${qualified && affordable ? "" : "locked"}" type="button" data-play-worldcup ${!qualified || !affordable ? "disabled" : ""}>${buttonLabel}</button></div>
+  </article>`;
+}
+
 function renderTables() {
   const nextIndex = Math.min(profile.unlockedTable, TABLES.length - 1);
   const featuredIndices = [...new Set([0, nextIndex, TABLES.length - 1])];
@@ -370,9 +382,9 @@ function renderTables() {
   let entries = TABLES.map((table, index) => ({ table, index }));
   if (activeFilter === "accessible") entries = entries.filter(entry => entry.index <= profile.unlockedTable);
   if (activeFilter === "locked") entries = entries.filter(entry => entry.index > profile.unlockedTable);
-  document.getElementById("tables-grid").innerHTML = entries.length
-    ? entries.map(entry => tableCard(entry.table, entry.index)).join("")
-    : '<div class="empty-state">Toutes les tables sont déjà déverrouillées.</div>';
+  const regularCards = entries.map(entry => tableCard(entry.table, entry.index)).join("");
+  const showWorldCup = activeFilter === "all" || (activeFilter === "accessible" && profile.rank <= 6) || (activeFilter === "locked" && profile.rank > 6);
+  document.getElementById("tables-grid").innerHTML = regularCards + (showWorldCup ? worldCupTableCard() : "") || '<div class="empty-state">Aucune table dans ce filtre.</div>';
 
   const current = TABLES[nextIndex];
   const following = TABLES[nextIndex + 1];
@@ -386,7 +398,25 @@ function renderTables() {
       startTournament(Number(button.dataset.playTable));
     });
   });
-  document.querySelectorAll(".table-card.playable").forEach(card => {
+  document.querySelectorAll("[data-play-worldcup]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      startWorldCup();
+    });
+  });
+  document.querySelectorAll(".world-cup-table-card.playable").forEach(card => {
+    card.addEventListener("click", () => {
+      if (profile.balance >= WORLD_CUP_TABLE.buyIn) startWorldCup();
+      else showToast("Votre solde est insuffisant pour cette table.");
+    });
+    card.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        card.click();
+      }
+    });
+  });
+  document.querySelectorAll(".table-card[data-table-index].playable").forEach(card => {
     const index = Number(card.dataset.tableIndex);
     card.addEventListener("click", () => {
       if (profile.balance >= TABLES[index].buyIn) startTournament(index);
@@ -715,19 +745,31 @@ function startTournament(tableIndex) {
 }
 
 function startWorldCup() {
-  if (profile.rank > 6 || profile.balance < 10000 || game) return;
+  if (game && !game.finished) {
+    switchView("game");
+    setGameOrientation(true);
+    showToast("Un tournoi est déjà en cours.");
+    return;
+  }
+  if (profile.rank > 6) {
+    showToast("La Coupe du monde est réservée au top 6.");
+    return;
+  }
+  if (profile.balance < WORLD_CUP_TABLE.buyIn) {
+    showToast("Votre solde est insuffisant pour cette table.");
+    return;
+  }
   const challengeName = document.getElementById("worldcup-challenge").value;
-  const worldTable = { city: "Coupe du monde", code: "WPC", slug: "las-vegas", color: "#3c1765", accent: "#f3d58e", buyIn: 10000, small: 500, big: 1000, tier: "Finale mondiale", prestige: 16, isWorldCup: true };
   const qualifiers = makeRanking().filter(player => !player.current).slice(0, 5).map(player => ({
     entry: PLAYER_ROSTER.find(entry => entry.name === player.name),
     rank: player.rank
   })).filter(player => player.entry);
   if (qualifiers.length < 5) return;
-  profile.balance -= worldTable.buyIn;
+  profile.balance -= WORLD_CUP_TABLE.buyIn;
   profile.played += 1;
   saveProfile();
-  game = createGame(worldTable, -1, qualifiers, { isWorldCup: true, challengeName });
-  applyTableTheme(worldTable);
+  game = createGame(WORLD_CUP_TABLE, -1, qualifiers, { isWorldCup: true, challengeName });
+  applyTableTheme(WORLD_CUP_TABLE);
   switchView("game");
   setGameOrientation(true);
   saveGameState();
@@ -797,6 +839,19 @@ function cardHTML(card, hidden = false, empty = false) {
   return `<div class="playing-card ${card.color === "red" ? "red" : ""}"><span>${card.rank}</span><span class="card-suit">${card.symbol}</span></div>`;
 }
 
+function ensurePlayerHoleCards() {
+  let cards = document.getElementById("player-hole-cards");
+  if (cards) return cards;
+  const actions = document.getElementById("game-actions");
+  if (!actions) return null;
+  const panel = document.createElement("div");
+  panel.className = "player-hole-card-panel";
+  panel.setAttribute("aria-label", "Vos cartes");
+  panel.innerHTML = '<span>Vos cartes</span><div class="player-hole-cards" id="player-hole-cards"></div>';
+  actions.prepend(panel);
+  return panel.querySelector("#player-hole-cards");
+}
+
 function renderGame() {
   if (!game) return;
   const blinds = currentBlinds();
@@ -833,7 +888,8 @@ function renderGame() {
   }).join("");
 
   const human = game.players[0];
-  document.getElementById("player-hole-cards").innerHTML = human.cards.map(card => cardHTML(card)).join("");
+  const playerHoleCards = ensurePlayerHoleCards();
+  if (playerHoleCards) playerHoleCards.innerHTML = human.cards.map(card => cardHTML(card)).join("");
   const toCall = amountToCall(human);
   const callButton = document.getElementById("action-call");
   callButton.textContent = toCall > 0 ? `Suivre ${Math.min(toCall, human.stack)}` : "Parole";
@@ -1283,7 +1339,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateInstallButtons();
   updateResumeButton();
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    navigator.serviceWorker.register("service-worker.js?v=11", { updateViaCache: "none" }).then(registration => registration.update()).catch(() => {});
   }
   renderAll();
   registerWebMCP();

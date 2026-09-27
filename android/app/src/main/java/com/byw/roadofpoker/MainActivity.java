@@ -15,7 +15,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
-    private static final String GAME_URL = "https://willylehun.github.io/road-of-poker/";
+    private static final String GAME_URL = "https://willylehun.github.io/road-of-poker/?app=12";
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -39,6 +39,7 @@ public class MainActivity extends Activity {
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidApp");
 
         webView.setWebViewClient(new WebViewClient() {
@@ -52,7 +53,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (savedInstanceState == null) webView.loadUrl(GAME_URL);
+        webView.loadUrl(GAME_URL);
     }
 
     private class AndroidBridge {
@@ -64,18 +65,6 @@ public class MainActivity extends Activity {
                     : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             ));
         }
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        webView.saveState(outState);
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        webView.restoreState(savedInstanceState);
     }
 
     @SuppressWarnings("deprecation")
