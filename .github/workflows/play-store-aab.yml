@@ -77,24 +77,7 @@ jobs:
           cp android/app/build/outputs/bundle/release/app-release.aab road-of-poker-play.aab
           test -s road-of-poker-play.aab
           # Upload keys use a self-signed certificate, so -strict incorrectly fails on the expected trust-chain warning.
-          if ! unzip -Z1 road-of-poker-play.aab | grep -Eiq '^META-INF/[^/]+\\.(RSA|DSA|EC)          sha256sum road-of-poker-play.aab > road-of-poker-play.aab.sha256
-          sha256sum -c road-of-poker-play.aab.sha256
-
-      - name: Upload verified Play Store bundle
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: road-of-poker-play-aab
-          path: |
-            road-of-poker-play.aab
-            road-of-poker-play.aab.sha256
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Remove temporary keystore
-        if: always()
-        shell: bash
-        run: rm -f "$RUNNER_TEMP/road-of-poker-upload.jks"
-; then
+          if ! unzip -Z1 road-of-poker-play.aab | grep -Eiq '^META-INF/[^/]+\.(RSA|DSA|EC)$'; then
             echo "::error::Aucune signature de certificat n'a été trouvée dans l'AAB."
             exit 1
           fi
